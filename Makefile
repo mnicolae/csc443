@@ -1,27 +1,33 @@
 # Makefile
 CC = g++
+CCFLAGS = -g -Wall
 
-all:
+# all:
 
-write_fixed_len_pages:
+# write_fixed_len_pages:
 
-read_fixed_len_page:
+read_fixed_len_pages: read_fixed_len_pages.o
+	$(CC) -o $@ $(CCFLAGS) $^
 
-csv2heapfile:
+# csv2heapfile:
 
-scan:
+# scan:
 
-insert:
+# insert:
 
-update:
+# update:
 
-delete:
+# delete:
 
-select:
+# select:
 
-csv2colstore:
+# csv2colstore:
 
-select2:
+# select2:
 
-select3:
+# select3:
 
+%.o : src/%.cc
+	$(CC) -c -o $@ $(CCFLAGS) $^ 
+
+# clean:
