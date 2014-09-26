@@ -17,25 +17,30 @@ int fixed_len_sizeof(Record *record)
   return numBytes;
 }
 
+/**
+ * Serialize the record to a byte array to be stored in buf.
+ */
+void fixed_len_write(Record *record, void *buf)
+{
+  for (Record::iterator i = record->begin(); i != record.end(); i++)
+  {
+    memcpy(buf, *i, 10);
+    buf = (char *) buf + 10;
+  }
+}
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+* Deserializes `size` bytes from the buffer, `buf`, and
+* stores the record in `record`.
+*/
+void fixed_len_read(void *buf, int size, Record *record)
+{
+  for (int i = 0; i < size/10; i++)
+  {
+    memcpy(record->at(i), *buf, 10);
+    buf = (char *) buf + 10;
+  }
+}
 
 
 /*int main()
