@@ -11,6 +11,11 @@ typedef struct {
 } Slot;
 
 /**
+* Initializes a page using the given slot size
+*/
+void init_fixed_len_page(Page *page, int page_size, int slot_size);
+
+/**
 * Calculates the maximal number of records that fit in a page
 */
 int fixed_len_page_capacity(Page *page);
