@@ -1,18 +1,45 @@
+#include <stdio.h>
+#include <fstream>
+#include <string.h>
+#include <vector>
+#include <cstring>
+#include <iostream>
+#include <stdlib.h>
+#include "pageManager.h"
+#include "bufferManager.h"
+
+int calculate_slot_size(int page_size)
+{
+   int page_capacity = page_size / RECORD_SIZE;
+   int page_remainder = page_size - (page_capacity * RECORD_SIZE);
+   
+   if (page_remainder >= page_capacity)
+   {
+       return page_capacity;
+   }
+   else
+   {
+      return page_capacity - 1; 
+   }
+}
+
 /**
 * Initializes a page using the given slot size
 */
 void init_fixed_len_page(Page *page, int page_size, int slot_size)
 {
-   page = (Page *) malloc(page_size);
+   //page = (Page *) malloc(page_size); 
    page->page_size = page_size;
    page->slot_size = slot_size;
-   memset(page, 0, page_size);
+
+   page->data = new char[page_size];
+   memset(page->data, 0, page_size);
 }
- 
+
 /**
 * Calculates the maximal number of records that fit in a page
 */
-int fixed_len_page_capacity(Page *page);
+int fixed_len_page_capacity(Page *page)
 {
    int pageSize = page->page_size;
    int slotSize = page->slot_size;
@@ -26,7 +53,7 @@ int fixed_len_page_capacity(Page *page);
 int fixed_len_page_freeslots(Page *page)
 {
    bool * slot;
-   slot = page + page->page_size - page->slot_size;
+   slot = (bool *) page->data + page->page_size - page->slot_size;
    int counter = 0;
    for (int i = 0; i < page->slot_size; i++)
    {
@@ -48,13 +75,14 @@ int fixed_len_page_freeslots(Page *page)
 int add_fixed_len_page(Page *page, Record *r)
 {
   bool * slot;
-  slot = page + page->page_size - page->slot_size;
+  slot = (bool *) page->data + page->page_size - page->slot_size;
   int free_slot = -1;
   for (int i = 0; i < page->slot_size; i++)
   {
-    if (slot)
+    if (!(*slot))
     {
-      free_slot = slot;
+      free_slot = i;
+      *slot = true;
       break;
     }
     slot += 1;
@@ -74,10 +102,10 @@ int add_fixed_len_page(Page *page, Record *r)
 */
 void write_fixed_len_page(Page *page, int slot, Record *r)
 {
-  char * record_offset = page + slot * RECORD_SIZE;
-  void buf = malloc(RECORD_SIZE);
-  fixed_len_write(r, &buf);
-  memcpy(record_offset, &buf, RECORD_SIZE);
+  char * record_offset = (char *) page->data + slot * RECORD_SIZE;
+  void * buf = malloc(RECORD_SIZE);
+  fixed_len_write(r, buf);
+  memcpy(record_offset, buf, RECORD_SIZE);
   free(buf);
 }
 
@@ -87,9 +115,9 @@ void write_fixed_len_page(Page *page, int slot, Record *r)
 */
 void read_fixed_len_page(Page *page, int slot, Record *r)
 {
-  char * record_offset = page + slot * RECORD_SIZE;
-  void buf = malloc(RECORD_SIZE);
-  fixed_len_read(&buf, RECORD_SIZE, r);
+  char * record_offset = (char *) page->data + slot * RECORD_SIZE;
+  void * buf = malloc(RECORD_SIZE);
+  fixed_len_read(buf, RECORD_SIZE, r);
   free(buf);
 }
 

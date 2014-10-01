@@ -1,12 +1,12 @@
 #include <vector>
 typedef const char* V;
-//typedef std::vector<V> Record;
+typedef std::vector<V> Record;
 using namespace std;
 
 #define ATTR_SIZE 10;
 
-class Record : public std::vector<V> {
-};
+//class Record : public std::vector<V> {
+//};
 
 
 

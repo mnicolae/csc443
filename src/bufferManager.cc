@@ -22,9 +22,9 @@ int fixed_len_sizeof(Record *record)
  */
 void fixed_len_write(Record *record, void *buf)
 {
-  for (Record::iterator i = record->begin(); i != record.end(); i++)
+  for (int i = 0; i < 100; i++) // TODO: maybe fix me
   {
-    memcpy(buf, *i, 10);
+    memcpy(buf, record->at(i), 10);
     buf = (char *) buf + 10;
   }
 }
@@ -37,7 +37,7 @@ void fixed_len_read(void *buf, int size, Record *record)
 {
   for (int i = 0; i < size/10; i++)
   {
-    memcpy(record->at(i), *buf, 10);
+    memcpy((void *) record->at(i), (const void *) buf, 10);
     buf = (char *) buf + 10;
   }
 }

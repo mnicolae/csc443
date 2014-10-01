@@ -1,3 +1,4 @@
+#include "bufferManager.h"
 #define RECORD_SIZE 1000
 
 typedef struct {
@@ -6,9 +7,13 @@ int page_size;
 int slot_size;
 } Page;
 
-typedef struct {
-   std:tuple<bool,int>[];
-} Slot;
+#define PAGE_STRUCT_SIZE 12
+
+/***
+* Calculate the slot size for a page given the page size
+* and the record size
+*/
+int calculate_slot_size(int page_size);
 
 /**
 * Initializes a page using the given slot size
