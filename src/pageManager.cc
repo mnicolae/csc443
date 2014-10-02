@@ -37,6 +37,29 @@ void init_fixed_len_page(Page *page, int page_size, int slot_size)
 }
 
 /**
+* Initializes a heap file directory page
+*/
+void init_directory_page(Page *page, int page_size)
+{
+   page->page_size = page_size;
+   page->slot_size = fixed_len_capacity(page);
+
+   page->data = new char[page_size];
+   memset(page->data, 0, page_size);
+   
+   char * entry_offset = page->data;
+   DirectoryEntry dirEntry;
+   dirEntry->page_offset = 0;
+   dirEntry->freespace = 0;
+
+   for (int i=0; i < page->slot_size; i++)
+   { 
+       memcpy(entry_offset, &dirEntry, DIR_ENTRY_SIZE);
+       entry_offset += DIR_ENTRY_SIZE;
+   }
+}
+
+/**
 * Calculates the maximal number of records that fit in a page
 */
 int fixed_len_page_capacity(Page *page)
@@ -47,6 +70,15 @@ int fixed_len_page_capacity(Page *page)
    return (pageSize - slotSize) / RECORD_SIZE;
 }
  
+/**
+* Calculates the maximal number of entries that fit in a
+* directory page
+*/
+int fixed_len_page_capacity(Page *page)
+{
+   return page->page_size / DIR_ENTRY_SIZE:
+}
+
 /**
 * Calculate the free space (number of free slots) in the page
 */
