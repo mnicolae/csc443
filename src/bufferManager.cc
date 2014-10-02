@@ -2,6 +2,7 @@
 #include <vector>
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 
 /**
  * Compute the number of bytes required to serialize record
@@ -35,10 +36,16 @@ void fixed_len_write(Record *record, void *buf)
 */
 void fixed_len_read(void *buf, int size, Record *record)
 {
-  for (int i = 0; i < size/10; i++)
+  char * attr;
+
+  for (int i = 0; i < 100; i++)    // TODO: initial record in read_fixed_len_page and initial 100 empty attr before passing it into functions. 
   {
-    memcpy((void *) record->at(i), (const void *) buf, 10);
+    attr = (char *) malloc(11);
+    memcpy(attr, (const void *) buf, 10);
+    attr[10] = '\0';
+    record->push_back(attr);
     buf = (char *) buf + 10;
+    //free(attr);
   }
 }
 

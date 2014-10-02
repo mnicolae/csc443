@@ -32,4 +32,5 @@ read_fixed_len_pages: read_fixed_len_pages.o pageManager.o bufferManager.o
 %.o : src/%.cc
 	$(CC) -c -o $@ $(CCFLAGS) $(INCLUDES) $^ 
 
-# clean:
+clean:
+	rm -f *.o

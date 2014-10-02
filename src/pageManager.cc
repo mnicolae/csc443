@@ -103,7 +103,7 @@ int add_fixed_len_page(Page *page, Record *r)
 void write_fixed_len_page(Page *page, int slot, Record *r)
 {
   char * record_offset = (char *) page->data + slot * RECORD_SIZE;
-  void * buf = malloc(RECORD_SIZE);
+  void * buf = malloc(RECORD_SIZE); // TODO delete malloc
   fixed_len_write(r, buf);
   memcpy(record_offset, buf, RECORD_SIZE);
   free(buf);
@@ -116,9 +116,9 @@ void write_fixed_len_page(Page *page, int slot, Record *r)
 void read_fixed_len_page(Page *page, int slot, Record *r)
 {
   char * record_offset = (char *) page->data + slot * RECORD_SIZE;
-  void * buf = malloc(RECORD_SIZE);
+  void * buf = record_offset;
   fixed_len_read(buf, RECORD_SIZE, r);
-  free(buf);
+  int c = 0;
 }
 
 
