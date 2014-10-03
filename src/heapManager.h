@@ -23,6 +23,7 @@ class RecordIterator {
 }
 
 typedef struct {
+    int pid;
     int page_offset;
     int freespace;
 } DirectoryEntry;
