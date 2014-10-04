@@ -14,9 +14,11 @@ read_fixed_len_pages: read_fixed_len_pages.o pageManager.o bufferManager.o
 csv2heapfile: csv2heapfile.o pageManager.o bufferManager.o heapManager.o 
 	$(CC) -o $@ $(CCFLAGS) $^         
 
-# scan:
+scan: scan.o pageManager.o bufferManager.o heapManager.o
+	$(CC) -o $@ $(CCFLAGS) $^         
 
-# insert:
+insert: insert.o pageManager.o bufferManager.o heapManager.o
+	$(CC) -o $@ $(CCFLAGS) $^         
 
 # update:
 

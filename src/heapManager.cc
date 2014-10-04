@@ -13,9 +13,6 @@ void init_heapfile(Heapfile *heapfile, int page_size, FILE *file)
 
    heapfile->file_ptr = file;
    heapfile->page_size = page_size;
-
-   init_directory_page(&dir, page_size);
-   write_page(&dir, heapfile, dirID); 
 }
 
 /**
@@ -31,14 +28,16 @@ PageID alloc_page(Heapfile *heapfile)
    int pageSlotSize = calculate_slot_size(page_size); 
    DirectoryEntry dirEntry, nextDirPointer;
    int dirOffset = 0;
-   
+   int oldOffset = 0;
    init_fixed_len_page(&dataPage, page_size, pageSlotSize);
    init_directory_page(&dirPage, heapfile->page_size); 
+   fseek(heapf, 0, SEEK_SET);
    fread(dirPage.data, heapfile->page_size, 1, heapf);
 
    memcpy((void *) &nextDirPointer, dirPage.data, DIR_ENTRY_SIZE);
 
    do {
+     // Current directory page has free entries
      if (nextDirPointer.freespace > 0)
      {
          for (int i = 1; i < capacity; i++)
@@ -68,36 +67,51 @@ PageID alloc_page(Heapfile *heapfile)
            }
          }
      }
-
-     fseeko(heapfile->file_ptr, nextDirPointer.page_offset, SEEK_SET);
-     init_directory_page(&dirPage, heapfile->page_size); 
-     fread(dirPage.data, 1, heapfile->page_size, heapf);
-     memcpy((void *) &nextDirPointer, dirPage.data, DIR_ENTRY_SIZE);
-     dirPageCount++;
+     
+     // will be used as the condition for do-while loop
      dirOffset = nextDirPointer.page_offset;
 
-   } while (nextDirPointer.page_offset != 0);
-
+     // There exists another directory page
+     if (nextDirPointer.page_offset != 0)
+     {
+        fseek(heapfile->file_ptr, nextDirPointer.page_offset, SEEK_SET);
+        oldOffset = nextDirPointer.page_offset; 
+        init_directory_page(&dirPage, heapfile->page_size); 
+        fread(dirPage.data, heapfile->page_size, 1, heapf);
+        memcpy((void *) &nextDirPointer, dirPage.data, DIR_ENTRY_SIZE);
+        dirPageCount++;
+     }
+  } while (dirOffset != 0);
+ 
+   // Allocate a new directory page. All other ones are full.
+   
+   // Write the old directory page to disk. It's offset is no longer 0.
    nextDirPointer.page_offset =  (1 + dirPageCount) * capacity * page_size;
-   memcpy((void *) &dirPage.data, (const void *) &nextDirPointer, DIR_ENTRY_SIZE);
-   fseeko(heapf, dirOffset, SEEK_SET);
-   fwrite(dirPage.data, 1, page_size, heapf);
+   memcpy(dirPage.data, (const void *) &nextDirPointer, DIR_ENTRY_SIZE);
+   fseek(heapf, oldOffset, SEEK_SET);
+   fwrite(dirPage.data, page_size, 1, heapf);
 
+   // create a new directory page and a new directory entry pointer
    Page newDirPage;
    DirectoryEntry newDirPagePointer;
    init_directory_page(&newDirPage, page_size);
 
+   //get the first dir entry in the dir page, modify it to be a dir entry pointer and copy it back
    memcpy((void *) &newDirPagePointer, newDirPage.data, DIR_ENTRY_SIZE);
    newDirPagePointer.freespace--;
-   memcpy((void *) &newDirPage.data, (const void *) &newDirPagePointer, DIR_ENTRY_SIZE);
+   memcpy(newDirPage.data, (const void *) &newDirPagePointer, DIR_ENTRY_SIZE);
    
+   //get and modify the new dir entry and copy it back
    memcpy((void *) &dirEntry, newDirPage.data + DIR_ENTRY_SIZE, DIR_ENTRY_SIZE);
-   dirEntry.page_offset = (1 + dirPageCount) * (capacity + 1) * page_size;
+   dirEntry.page_offset = (1 + dirPageCount) * capacity * page_size + page_size;
    dirEntry.pid = (1 + dirPageCount) * (capacity - 1) + 1;
    dirEntry.freespace = page_size / RECORD_SIZE;
-   memcpy((void *) &newDirPage.data + DIR_ENTRY_SIZE, (const void *) &dirEntry, DIR_ENTRY_SIZE);
-   fseeko(heapf, nextDirPointer.page_offset, SEEK_SET); 
-   fwrite(newDirPage.data, 1, page_size, heapf);
+
+   memcpy(newDirPage.data + DIR_ENTRY_SIZE, (const void *) &dirEntry, DIR_ENTRY_SIZE);
+
+   // copy the page back to the heap file
+   fseek(heapf, nextDirPointer.page_offset, SEEK_SET); 
+   fwrite(newDirPage.data, page_size, 1, heapf);
    fflush(heapf);
    
    return dirEntry.pid;
@@ -112,7 +126,7 @@ void read_page(Heapfile *heapfile, PageID pid, Page *page)
   int off_set = getOffSet(heapfile, pid);
   if (off_set != -1)
   {
-    fseeko(heapfile->file_ptr, off_set, SEEK_SET);
+    fseek(heapfile->file_ptr, off_set, SEEK_SET);
     fread(page->data, 1, heapfile->page_size, heapfile->file_ptr);
   }
 }
@@ -137,6 +151,8 @@ int getOffSet(Heapfile * heapfile, PageID pid)
 {
   FILE * heapf = heapfile->file_ptr;
   Page dirPage;
+  int dirOffset = 0;
+
   init_directory_page(&dirPage, heapfile->page_size); 
   fseek(heapf, 0, SEEK_SET);
   fread(dirPage.data, heapfile->page_size, 1, heapf);
@@ -155,12 +171,17 @@ int getOffSet(Heapfile * heapfile, PageID pid)
       }
     }
 
-    fseeko(heapfile->file_ptr, nextDir.page_offset, SEEK_SET);
-    init_directory_page(&dirPage, heapfile->page_size); 
-    fread(dirPage.data, 1, heapfile->page_size, heapf);
-    memcpy((void *) &nextDir, dirPage.data, DIR_ENTRY_SIZE);
+    dirOffset = nextDir.page_offset;
 
-  } while (nextDir.page_offset != 0);
+    if (dirOffset != 0)
+    {
+      fseek(heapfile->file_ptr, nextDir.page_offset, SEEK_SET);
+      init_directory_page(&dirPage, heapfile->page_size); 
+      fread(dirPage.data, heapfile->page_size, 1, heapf);
+      memcpy((void *) &nextDir, dirPage.data, DIR_ENTRY_SIZE);
+    }
+
+  } while (dirOffset != 0);
 
   return -1;
 }
