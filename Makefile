@@ -5,13 +5,14 @@ INCLUDES = -I. -I./src/*.h
 
 # all:
 
-write_fixed_len_pages: write_fixed_len_pages.o pageManager.o bufferManager.o
+write_fixed_len_pages: write_fixed_len_pages.o pageManager.o bufferManager.o 
 	$(CC) -o $@ $(CCFLAGS) $^         
 
-read_fixed_len_pages: read_fixed_len_pages.o pageManager.o bufferManager.o
+read_fixed_len_pages: read_fixed_len_pages.o pageManager.o bufferManager.o 
 	$(CC) -o $@ $(CCFLAGS) $^
 
-# csv2heapfile:
+csv2heapfile: csv2heapfile.o pageManager.o bufferManager.o heapManager.o 
+	$(CC) -o $@ $(CCFLAGS) $^         
 
 # scan:
 

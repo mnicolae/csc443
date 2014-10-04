@@ -1,12 +1,12 @@
 #include <iostream>
+#include <stdio.h>
 #include <vector>
-
-#define DIR_ENTRY_SIZE sizeof(DirectoryEntry)
+#include "pageManager.h"
 
 typedef struct {
 FILE *file_ptr;
 int page_size;
-} Heapfile
+} Heapfile;
 
 typedef int PageID;
  
@@ -20,13 +20,15 @@ class RecordIterator {
     RecordIterator(Heapfile *heapfile);
     Record next();
     bool hasNext();
-}
+};
 
 typedef struct {
-    int pid;
+    PageID pid;
     int page_offset;
     int freespace;
 } DirectoryEntry;
+
+#define DIR_ENTRY_SIZE sizeof(DirectoryEntry)
 
 /**
  * Initialize a heapfile to use the file and page size given.
@@ -47,3 +49,13 @@ void read_page(Heapfile *heapfile, PageID pid, Page *page);
  * Write a page from memory to disk
  */
 void write_page(Page *page, Heapfile *heapfile, PageID pid);
+
+int getOffSet(Heapfile * heapfile, PageID pid);
+
+/**
+* Initializes a heap file directory page
+*/
+void init_directory_page(Page *page, int page_size);
+
+int fixed_len_dir_capacity(Page *page);
+

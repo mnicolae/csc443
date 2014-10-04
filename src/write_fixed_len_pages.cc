@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <fstream>
 #include <string.h>
-#include "bufferManager.h"
 #include "pageManager.h"
 #include <vector>
 #include <cstring>

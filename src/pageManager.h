@@ -1,5 +1,4 @@
 #include "bufferManager.h"
-#define RECORD_SIZE 1000
 
 typedef struct {
 void *data;

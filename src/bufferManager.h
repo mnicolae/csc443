@@ -1,18 +1,11 @@
 #include <vector>
+
 typedef const char* V;
 typedef std::vector<V> Record;
 using namespace std;
 
 #define ATTR_SIZE 10;
-
-//class Record : public std::vector<V> {
-//};
-
-
-
-
-
-
+#define RECORD_SIZE 1000
 
 /**
  * Compute the number of bytes required to serialize record
