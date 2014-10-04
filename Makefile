@@ -20,7 +20,8 @@ scan: scan.o pageManager.o bufferManager.o heapManager.o
 insert: insert.o pageManager.o bufferManager.o heapManager.o
 	$(CC) -o $@ $(CCFLAGS) $^         
 
-# update:
+update: update.o pageManager.o bufferManager.o heapManager.o
+	$(CC) -o $@ $(CCFLAGS) $^         
 
 # delete:
 

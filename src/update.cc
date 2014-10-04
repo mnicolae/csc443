@@ -1,0 +1,53 @@
+#include <stdio.h>
+#include <fstream>
+#include <string.h>
+#include <vector>
+#include <cstring>
+#include <iostream>
+#include <cstdlib>
+#include <sstream>
+#include <assert.h>
+#include "heapManager.h"
+
+int main(int argc, char *argv[])
+{
+  char * newValue;
+  int slotNumber, attrID, page_size, slot_size;
+  Record record;
+  Page dataPage;
+  Heapfile hFile;
+  FILE * heapFile;
+  PageID pid;
+
+  if (argc != 7)
+  {
+    printf("Usage: update <heapfile> <record_id> <attribute_id> <new_value> <page_size>\n");
+  }
+  
+  heapFile = fopen(argv[1], "r+");
+  pid = atoi(argv[2]);
+  slotNumber = atoi(argv[3]);
+  attrID = atoi(argv[4]);
+  newValue = argv[5];
+  page_size = atoi(argv[6]);
+
+  init_heapfile(&hFile, page_size, heapFile);
+
+  slot_size = calculate_slot_size(page_size);
+  assert(page_size > RECORD_SIZE + PAGE_STRUCT_SIZE);
+
+  init_fixed_len_page(&dataPage, page_size, slot_size); 
+
+  read_page(&hFile, pid, &dataPage);
+  read_fixed_len_page(&dataPage, slotNumber, &record);
+
+  record[attrID] = newValue;
+  
+  write_fixed_len_page(&dataPage, slotNumber, &record);
+  write_page(&dataPage, &hFile, pid);
+
+  fclose(heapFile);
+
+  return 0;
+
+}
