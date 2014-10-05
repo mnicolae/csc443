@@ -36,7 +36,15 @@ int fixed_len_page_freeslots(Page *page);
 * -1 if unsuccessful (page full)
 */
 int add_fixed_len_page(Page *page, Record *r);
- 
+
+/**
+* Delete a record from the page
+* Returns:
+* record 0 if successful,
+* -1 if unsuccessful (slot is already empty)
+*/
+int delete_fixed_len_page(Page *page, Record *r, int slot_number);
+
 /**
 * Write a record into a given slot.
 */

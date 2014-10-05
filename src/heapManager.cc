@@ -186,6 +186,91 @@ int getOffSet(Heapfile * heapfile, PageID pid)
   return -1;
 }
 
+void updateDirEntry(Heapfile * heapfile, PageID pid, int diff)
+{
+  FILE * heapf = heapfile->file_ptr;
+  int page_size = heapfile->page_size;
+  Page dirPage;
+  int dirOffset = 0;
+
+  init_directory_page(&dirPage, heapfile->page_size); 
+  fseek(heapf, 0, SEEK_SET);
+  fread(dirPage.data, heapfile->page_size, 1, heapf);
+
+  int capacity = dirPage.page_size / DIR_ENTRY_SIZE;
+  DirectoryEntry dirEntry, nextDir;
+  memcpy((void *) &nextDir, dirPage.data, DIR_ENTRY_SIZE);
+
+  do {
+    for (int i = 1; i < capacity; i++)
+    {
+      memcpy((void *) &dirEntry, dirPage.data + DIR_ENTRY_SIZE * i, DIR_ENTRY_SIZE);
+      if (dirEntry.pid == pid)
+      {
+        dirEntry.freespace += diff;
+        memcpy(dirPage.data + i * DIR_ENTRY_SIZE, (const void *) &dirEntry, DIR_ENTRY_SIZE);
+
+        fseek(heapf, dirOffset, SEEK_SET);
+        fwrite(dirPage.data, page_size, 1, heapf);
+        fflush(heapf);
+        
+        return;
+      }
+    }
+
+    dirOffset = nextDir.page_offset;
+
+    if (dirOffset != 0)
+    {
+      fseek(heapfile->file_ptr, nextDir.page_offset, SEEK_SET);
+      init_directory_page(&dirPage, heapfile->page_size); 
+      fread(dirPage.data, heapfile->page_size, 1, heapf);
+      memcpy((void *) &nextDir, dirPage.data, DIR_ENTRY_SIZE);
+    }
+
+  } while (dirOffset != 0);
+}
+
+PageID findAvailablePage(Heapfile * heapfile)
+{
+  FILE * heapf = heapfile->file_ptr;
+  int page_size = heapfile->page_size;
+  Page dirPage;
+  int dirOffset = 0;
+
+  init_directory_page(&dirPage, page_size); 
+  fseek(heapf, 0, SEEK_SET);
+  fread(dirPage.data, heapfile->page_size, 1, heapf);
+
+  int capacity = dirPage.page_size / DIR_ENTRY_SIZE;
+  DirectoryEntry dirEntry, nextDir;
+  memcpy((void *) &nextDir, dirPage.data, DIR_ENTRY_SIZE);
+
+  do {
+    for (int i = 1; i < capacity; i++)
+    {
+      memcpy((void *) &dirEntry, dirPage.data + DIR_ENTRY_SIZE * i, DIR_ENTRY_SIZE);
+      if (dirEntry.freespace > 0 && dirEntry.pid != 0)
+      {
+          return dirEntry.pid;
+      }
+    }
+
+    dirOffset = nextDir.page_offset;
+
+    if (dirOffset != 0)
+    {
+      fseek(heapfile->file_ptr, nextDir.page_offset, SEEK_SET);
+      init_directory_page(&dirPage, heapfile->page_size); 
+      fread(dirPage.data, heapfile->page_size, 1, heapf);
+      memcpy((void *) &nextDir, dirPage.data, DIR_ENTRY_SIZE);
+    }
+
+  } while (dirOffset != 0);
+
+  return -1;
+}
+
 /**
 * Initializes a heap file directory page
 */
@@ -201,7 +286,7 @@ void init_directory_page(Page *page, int page_size)
    DirectoryEntry dirEntry, nextDirPointer;
    dirEntry.pid = 0;
    dirEntry.page_offset = 0;
-   dirEntry.freespace = 0;
+   dirEntry.freespace = calculate_slot_size(page_size);
    nextDirPointer.page_offset = 0;
    nextDirPointer.pid = 0;
    nextDirPointer.freespace = page_size/DIR_ENTRY_SIZE - 1;

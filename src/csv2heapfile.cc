@@ -21,6 +21,7 @@ int main(int argc, char *argv[])
   char * attr;
   int ch;
   int count = 0;
+  int numRecords = 0;
   Record record;
   Page page;
   int page_size;
@@ -31,6 +32,8 @@ int main(int argc, char *argv[])
   Heapfile hFile;
   FILE * heapFile;
   PageID pid;
+  int diff;
+  struct timeb start, end;
 
   if (argc != 4)
   {
@@ -45,7 +48,11 @@ int main(int argc, char *argv[])
   hFile.page_size = page_size;
 
   slot_size = calculate_slot_size(page_size);
+  diff = 0 - slot_size;
   assert(page_size > RECORD_SIZE + PAGE_STRUCT_SIZE);
+
+  ftime(&start);
+  long start_time = start.time * 1000 + start.millitm; 
 
   init_fixed_len_page(&page, page_size, slot_size); 
   
@@ -69,24 +76,30 @@ int main(int argc, char *argv[])
      }
      
      rc = add_fixed_len_page(&page, &record); 
-     //numRecords++;
+     numRecords++;
      if (rc == -1)
      {
         pid = alloc_page(&hFile);
         write_page(&page, &hFile, pid);
+        updateDirEntry(&hFile, pid, diff);
 	//fwrite(page.data, 1, page.page_size, heapFile);
         init_fixed_len_page(&page, page_size, slot_size); 
         rc = add_fixed_len_page(&page, &record); 
-        //numPages++;
+        numRecords = 0;
      }
   }
 
-  Record temp;
-  read_fixed_len_page(&page, 2, &temp);
 
-  //fwrite(page.data, 1, page.page_size, heapFile);
+  numRecords += 1;
   pid = alloc_page(&hFile);
+  updateDirEntry(&hFile, pid, 0 - numRecords);
   write_page(&page, &hFile, pid);
+
+  ftime(&end);
+  long end_time = end.time * 1000 + end.millitm; 
+
+  printf("\nTIME: %ld miliseconds\n", end_time - start_time);
+
   csvStream.close();
   fclose(heapFile);
   fclose(csvNumLines);

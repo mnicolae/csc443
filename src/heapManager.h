@@ -52,6 +52,11 @@ void write_page(Page *page, Heapfile *heapfile, PageID pid);
 
 int getOffSet(Heapfile * heapfile, PageID pid);
 
+void updateDirEntry(Heapfile * heapfile, PageID pid, int diff);
+
+PageID findAvailablePage(Heapfile * heapfile);
+
+
 /**
 * Initializes a heap file directory page
 */

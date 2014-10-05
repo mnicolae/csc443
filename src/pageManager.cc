@@ -95,6 +95,31 @@ int add_fixed_len_page(Page *page, Record *r)
   return free_slot;
 }
 
+/**
+* Delete a record from the page
+* Returns:
+* record 0 if successful,
+* -1 if unsuccessful (slot is already empty)
+*/
+int delete_fixed_len_page(Page *page, Record *r, int slot_number)
+{
+   bool * slot = (bool *) page->data + page->page_size - page->slot_size + slot_number; 
+
+   Record record = *r;
+   const char * empty = "----------";
+   if (!(*slot))
+   {
+      return -1;
+   }
+
+   for (int i=0; i < 100; i++)
+   {
+      record[i] = empty;
+   }
+
+   *slot = false;
+   return 0;
+}
 
 /**
 * Write a record into a given slot.

@@ -20,6 +20,7 @@ int main(int argc, char *argv[])
    DirectoryEntry dirEntry, nextDirPointer; 
    int capacity;
    int dirOffset;
+   char * empty = "          ";
 
    if (argc != 3)
    {
@@ -38,7 +39,7 @@ int main(int argc, char *argv[])
 
    fread(dirPage.data, page_size, 1, heapFile);
    
-   memcpy((void *) &nextDirPointer, dirPage.data, DIR_ENTRY_SIZE); // TO DO parse later
+   memcpy((void *) &nextDirPointer, dirPage.data, DIR_ENTRY_SIZE);
    
    fseek(heapfile.file_ptr, page_size, SEEK_SET);
    fread(dataPage.data, page_size, 1, heapFile);
@@ -55,7 +56,9 @@ int main(int argc, char *argv[])
           {
              Record record;
              read_fixed_len_page(&dataPage, i, &record);
-             for (int j=0; j < 100; j++)
+             if (strncmp(record.at(0), empty, 10))
+             {
+               for (int j=0; j < 100; j++)
                {   
                    if (j == 99) 
                    {   
@@ -67,6 +70,7 @@ int main(int argc, char *argv[])
                    }   
                }   
                printf("\n");
+             }
           }
         }
       }
@@ -85,5 +89,6 @@ int main(int argc, char *argv[])
   } while (dirOffset != 0);
 
    fclose(heapFile);
+   return 0;
 }
 

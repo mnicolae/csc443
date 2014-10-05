@@ -23,9 +23,11 @@ insert: insert.o pageManager.o bufferManager.o heapManager.o
 update: update.o pageManager.o bufferManager.o heapManager.o
 	$(CC) -o $@ $(CCFLAGS) $^         
 
-# delete:
+delete: delete.o pageManager.o bufferManager.o heapManager.o
+	$(CC) -o $@ $(CCFLAGS) $^         
 
-# select:
+select: select.o pageManager.o bufferManager.o heapManager.o
+	$(CC) -o $@ $(CCFLAGS) $^         
 
 # csv2colstore:
 
