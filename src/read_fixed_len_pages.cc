@@ -42,12 +42,14 @@ int main(int argc, char *argv[])
   long start_time = start.time * 1000 + start.millitm; 
   
   fread(page.data, 1, page.page_size, pageStream);
+  // read out all the pages and then read out all the records
   while(!feof(pageStream))
   {
      for(int i=0; i < slot_size; i++)
      {
         Record record;
 	read_fixed_len_page(&page, i, &record);
+        // print out a record
         for (int j=0; j < 100; j++)
         {
             if (j == 99)

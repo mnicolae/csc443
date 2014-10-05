@@ -62,17 +62,20 @@ int main(int argc, char *argv[])
      attr = NULL;
      csvStream.getline(line, 1200);
      attr = strtok(line, delimeter);
-   
+
+     // get the record   
      while (attr)
      {
        record.push_back(attr);
        attr = strtok(NULL, delimeter);
      }
      
+     // write the record to the page
      rc = add_fixed_len_page(&page, &record); 
      numRecords++;
      if (rc == -1)
      {
+        // if the current page is full, write it to page file, allocate a new page
 	fwrite(page.data, 1, page.page_size, pageStream);
         init_fixed_len_page(&page, page_size, slot_size); 
         rc = add_fixed_len_page(&page, &record); 
@@ -80,6 +83,7 @@ int main(int argc, char *argv[])
      }
   }
 
+  // write the last page to pagefile
   fwrite(page.data, 1, page.page_size, pageStream);
 
   ftime(&end);

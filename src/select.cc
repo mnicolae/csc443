@@ -39,9 +39,10 @@ int main(int argc, char *argv[])
    slot_size = calculate_slot_size(page_size);
    init_heapfile(&heapfile, page_size, heapFile);
 
-  ftime(&startTime);
-  long start_time = startTime.time * 1000 + startTime.millitm; 
+   ftime(&startTime);
+   long start_time = startTime.time * 1000 + startTime.millitm; 
  
+   // read out first directory page and first directory page pointer
    fseek(heapfile.file_ptr, 0, SEEK_SET);
    init_fixed_len_page(&dataPage, page_size, slot_size);
    init_directory_page(&dirPage, page_size); 
@@ -54,6 +55,7 @@ int main(int argc, char *argv[])
    {
       for (int i = 1; i < capacity; i++)
       {
+        // get each directory entries
         memcpy((void *) &dirEntry, dirPage.data + DIR_ENTRY_SIZE * i, DIR_ENTRY_SIZE);
         if (dirEntry.page_offset != 0)
         {
@@ -61,9 +63,10 @@ int main(int argc, char *argv[])
           for (int i = 0; i < slot_size; i++)
           {
              Record record;
-             read_fixed_len_page(&dataPage, i, &record);
-             if (strncmp(record.at(0), empty, 10))
+             read_fixed_len_page(&dataPage, i, &record); 
+             if (strncmp(record.at(attrNo), empty, 10))
              {
+               // check if the attribute satisfies contriants
                if (strncmp(start, record.at(attrNo), 10) <= 0 && strncmp(record.at(attrNo), end, 10) <= 0)
                {
                    printf("%s\n", record.at(attrNo));

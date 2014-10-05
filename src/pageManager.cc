@@ -7,6 +7,10 @@
 #include <stdlib.h>
 #include "pageManager.h"
 
+
+/**
+* calculate the slot size for a page
+**/
 int calculate_slot_size(int page_size)
 {
    int page_capacity = page_size / RECORD_SIZE;
@@ -54,6 +58,7 @@ int fixed_len_page_freeslots(Page *page)
    bool * slot;
    slot = (bool *) page->data + page->page_size - page->slot_size;
    int counter = 0;
+   //iterate through a page's slots, check for free slots
    for (int i = 0; i < page->slot_size; i++)
    {
      if (slot)
@@ -76,6 +81,7 @@ int add_fixed_len_page(Page *page, Record *r)
   bool * slot;
   slot = (bool *) page->data + page->page_size - page->slot_size;
   int free_slot = -1;
+  // iterate through slots of a page, check for a free slot
   for (int i = 0; i < page->slot_size; i++)
   {
     if (!(*slot))
@@ -87,6 +93,7 @@ int add_fixed_len_page(Page *page, Record *r)
     slot += 1;
   }
 
+  // add the record to the free slot
   if (free_slot != -1)
   {
     write_fixed_len_page(page, free_slot, r);
@@ -106,12 +113,13 @@ int delete_fixed_len_page(Page *page, Record *r, int slot_number)
    bool * slot = (bool *) page->data + page->page_size - page->slot_size + slot_number; 
 
    Record record = *r;
-   const char * empty = "----------";
+   const char * empty = "          ";
    if (!(*slot))
    {
       return -1;
    }
 
+   // replace the content of attributes of a record to empty content 
    for (int i=0; i < 100; i++)
    {
       record[i] = empty;
@@ -127,10 +135,9 @@ int delete_fixed_len_page(Page *page, Record *r, int slot_number)
 void write_fixed_len_page(Page *page, int slot, Record *r)
 {
   char * record_offset = (char *) page->data + slot * RECORD_SIZE;
-  void * buf = malloc(RECORD_SIZE); // TODO delete malloc
+  void * buf = malloc(RECORD_SIZE);
   fixed_len_write(r, buf);
   memcpy(record_offset, buf, RECORD_SIZE);
-  free(buf);
 }
 
 /**
