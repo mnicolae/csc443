@@ -8,6 +8,7 @@
 #include <sstream>
 #include "heapManager.h"
 
+// Print out all records in a heap file
 int main(int argc, char *argv[])
 {
    //Record record;
@@ -92,4 +93,3 @@ int main(int argc, char *argv[])
    fclose(heapFile);
    return 0;
 }
-

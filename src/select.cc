@@ -10,6 +10,10 @@
 #include <ctime>
 #include "heapManager.h"
 
+/* Select single attribute with parameters <start> and <end>
+ * <attribute_id> is the index of the attribute to be selected 
+ * (e.g. 0 for the first attribute, 1 for the second attribute, etc.)
+ */
 int main(int argc, char *argv[])
 {
    Page dirPage;
@@ -55,7 +59,7 @@ int main(int argc, char *argv[])
    {
       for (int i = 1; i < capacity; i++)
       {
-        // get each directory entries
+        // get each directory entry
         memcpy((void *) &dirEntry, dirPage.data + DIR_ENTRY_SIZE * i, DIR_ENTRY_SIZE);
         if (dirEntry.page_offset != 0)
         {
@@ -66,7 +70,7 @@ int main(int argc, char *argv[])
              read_fixed_len_page(&dataPage, i, &record); 
              if (strncmp(record.at(attrNo), empty, 10))
              {
-               // check if the attribute satisfies contriants
+               // check if the attribute satisfies constraints
                if (strncmp(start, record.at(attrNo), 10) <= 0 && strncmp(record.at(attrNo), end, 10) <= 0)
                {
                    printf("%s\n", record.at(attrNo));
@@ -96,4 +100,3 @@ int main(int argc, char *argv[])
   fclose(heapFile);
   return 0;
 }
-

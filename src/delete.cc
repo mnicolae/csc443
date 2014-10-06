@@ -9,6 +9,7 @@
 #include <assert.h>
 #include "heapManager.h"
 
+// Delete a single record in the heap file given its record ID
 int main(int argc, char *argv[])
 {
   char * newValue;
@@ -19,6 +20,7 @@ int main(int argc, char *argv[])
   FILE * heapFile;
   PageID pid;
   bool * slot;
+  char * empty = "          ";
 
   if (argc != 5)
   {
@@ -37,13 +39,11 @@ int main(int argc, char *argv[])
 
   init_fixed_len_page(&dataPage, page_size, slot_size); 
 
+  // read page containing record to be deleted
   read_page(&hFile, pid, &dataPage);
   read_fixed_len_page(&dataPage, slotNumber, &record);
 
   slot = (bool *) dataPage.data + dataPage.page_size - dataPage.slot_size + slotNumber;
-  
-  char * empty = "          ";
-
   if (!(*slot))
   {
     return -1;
@@ -54,14 +54,14 @@ int main(int argc, char *argv[])
     record[i] = empty;
   }
   
+  // update data entry freespace info and data page slot info 
   updateDirEntry(&hFile, pid, -1); 
   *slot = false;
-    
+  
+  // write back the updated data page 
   write_fixed_len_page(&dataPage, slotNumber, &record);
   write_page(&dataPage, &hFile, pid);
 
   fclose(heapFile);
-
   return 0;
-
 }

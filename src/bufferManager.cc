@@ -23,7 +23,7 @@ int fixed_len_sizeof(Record *record)
  */
 void fixed_len_write(Record *record, void *buf)
 {
-  for (int i = 0; i < 100; i++) // TODO: maybe fix me
+  for (int i = 0; i < 100; i++)
   {
     memcpy(buf, record->at(i), 10);
     buf = (char *) buf + 10;
@@ -38,28 +38,12 @@ void fixed_len_read(void *buf, int size, Record *record)
 {
   char * attr;
 
-  for (int i = 0; i < 100; i++)    // TODO: initial record in read_fixed_len_page and initial 100 empty attr before passing it into functions. 
+  for (int i = 0; i < 100; i++)
   {
     attr = (char *) malloc(11);
     memcpy(attr, (const void *) buf, 10);
     attr[10] = '\0';
     record->push_back(attr);
     buf = (char *) buf + 10;
-    //free(attr);
   }
 }
-
-
-/*int main()
-{
-  int size;
-  std::vector<int> myvec (10);
-  for (int i = 0; i < myvec.size(); i++)
-  {
-    myvec.at(i) = i;
-  }
-
-  size = fixed_len_sizeof(myvec);
-  printf("%d", size);
-  return 0;
-}*/

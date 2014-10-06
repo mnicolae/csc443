@@ -53,12 +53,6 @@ PageID alloc_page(Heapfile *heapfile)
              memcpy(dirPage.data, (const void *) &nextDirPointer, DIR_ENTRY_SIZE);
              memcpy(dirPage.data + i * DIR_ENTRY_SIZE, (const void *) &dirEntry, DIR_ENTRY_SIZE);
 
-             //DirectoryEntry tempDir1, tempData1;
-             //memcpy((void *) &tempDir1, dirPage.data, DIR_ENTRY_SIZE);
-             //memcpy((void *) &tempData1, dirPage.data + DIR_ENTRY_SIZE, DIR_ENTRY_SIZE);
-
-
-             //dirPage.slot_size -= 10;
              fseek(heapf, dirOffset, SEEK_SET);
              fwrite(dirPage.data, page_size, 1, heapf);
              fflush(heapf);
@@ -122,7 +116,6 @@ PageID alloc_page(Heapfile *heapfile)
  */
 void read_page(Heapfile *heapfile, PageID pid, Page *page)
 {
-  //off_t off_set = pid * heapfile->page_size;
   int off_set = getOffSet(heapfile, pid);
   if (off_set != -1)
   {
@@ -147,6 +140,9 @@ void write_page(Page *page, Heapfile *heapfile, PageID pid)
   }
 }
 
+/**
+ * Get the offset of a Page in the heap file given its pid.
+ */
 int getOffSet(Heapfile * heapfile, PageID pid)
 {
   FILE * heapf = heapfile->file_ptr;
@@ -186,6 +182,9 @@ int getOffSet(Heapfile * heapfile, PageID pid)
   return -1;
 }
 
+/**
+ * Update the freespace of a page in the heap file given its pid.
+ */
 void updateDirEntry(Heapfile * heapfile, PageID pid, int diff)
 {
   FILE * heapf = heapfile->file_ptr;
@@ -231,6 +230,9 @@ void updateDirEntry(Heapfile * heapfile, PageID pid, int diff)
   } while (dirOffset != 0);
 }
 
+/**
+ * Find the first page in the heap file that can fit a new record.
+ */
 PageID findAvailablePage(Heapfile * heapfile)
 {
   FILE * heapf = heapfile->file_ptr;
@@ -309,4 +311,3 @@ int fixed_len_dir_capacity(Page *page)
 {
    return page->page_size / DIR_ENTRY_SIZE;
 }
-

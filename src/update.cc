@@ -9,6 +9,11 @@
 #include <assert.h>
 #include "heapManager.h"
 
+/* Update one attribute of a single record in the heap file given its record ID
+ * <attribute_id> is the index of the attribute to be updated 
+ * (e.g. 0 for the first attribute, 1 for the second attribute, etc.)
+ * <new_value> will have the same fixed length (10 bytes)
+ */
 int main(int argc, char *argv[])
 {
   char * newValue;

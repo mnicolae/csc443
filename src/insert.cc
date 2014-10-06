@@ -11,6 +11,7 @@
 
 using namespace std;
 
+// Insert all records in the CSV file to a heap file
 int main(int argc, char *argv[])
 {
   int slotNumber, page_size, slot_size, rc;
@@ -43,7 +44,7 @@ int main(int argc, char *argv[])
   init_fixed_len_page(&page, page_size, slot_size); 
 
   slot_size = calculate_slot_size(page_size);
-  //assert(page_size > RECORD_SIZE + PAGE_STRUCT_SIZE);
+  assert(page_size > RECORD_SIZE + PAGE_STRUCT_SIZE);
 
   // get the number of lines in the csv file 
   do
@@ -87,5 +88,4 @@ int main(int argc, char *argv[])
   csvStream.close();
 
   return 0;
-
 }

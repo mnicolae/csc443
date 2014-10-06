@@ -15,6 +15,9 @@
 
 using namespace std;
 
+/**
+* Read a record from the page from a given slot.
+*/
 int main(int argc, char *argv[])
 {
   Page page;

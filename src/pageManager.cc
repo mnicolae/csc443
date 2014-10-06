@@ -7,7 +7,6 @@
 #include <stdlib.h>
 #include "pageManager.h"
 
-
 /**
 * calculate the slot size for a page
 **/
@@ -31,7 +30,6 @@ int calculate_slot_size(int page_size)
 */
 void init_fixed_len_page(Page *page, int page_size, int slot_size)
 {
-   //page = (Page *) malloc(page_size); 
    page->page_size = page_size;
    page->slot_size = slot_size;
 
@@ -58,6 +56,7 @@ int fixed_len_page_freeslots(Page *page)
    bool * slot;
    slot = (bool *) page->data + page->page_size - page->slot_size;
    int counter = 0;
+
    //iterate through a page's slots, check for free slots
    for (int i = 0; i < page->slot_size; i++)
    {
@@ -81,6 +80,7 @@ int add_fixed_len_page(Page *page, Record *r)
   bool * slot;
   slot = (bool *) page->data + page->page_size - page->slot_size;
   int free_slot = -1;
+
   // iterate through slots of a page, check for a free slot
   for (int i = 0; i < page->slot_size; i++)
   {

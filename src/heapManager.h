@@ -50,17 +50,28 @@ void read_page(Heapfile *heapfile, PageID pid, Page *page);
  */
 void write_page(Page *page, Heapfile *heapfile, PageID pid);
 
+/**
+ * Get the offset of a Page in the heap file given its pid.
+ */
 int getOffSet(Heapfile * heapfile, PageID pid);
 
+/**
+ * Update the freespace of a page in the heap file given its pid.
+ */
 void updateDirEntry(Heapfile * heapfile, PageID pid, int diff);
 
+/**
+ * Find the first page in the heap file that can fit a new record.
+ */
 PageID findAvailablePage(Heapfile * heapfile);
-
 
 /**
 * Initializes a heap file directory page
 */
 void init_directory_page(Page *page, int page_size);
 
+/**
+* Calculates the maximal number of entries that fit in a
+* directory page
+*/
 int fixed_len_dir_capacity(Page *page);
-

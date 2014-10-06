@@ -3,7 +3,9 @@ CC = g++
 CCFLAGS = -g -Wall
 INCLUDES = -I. -I./src/*.h
 
-# all:
+TARGETS: write_fixed_len_pages read_fixed_len_pages csv2heapfile scan insert update delete select
+OBJSDEPS: 
+all: $(TARGETS)
 
 write_fixed_len_pages: write_fixed_len_pages.o pageManager.o bufferManager.o 
 	$(CC) -o $@ $(CCFLAGS) $^         

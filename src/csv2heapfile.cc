@@ -44,8 +44,8 @@ int main(int argc, char *argv[])
   csvNumLines = fopen(argv[1], "r");
   heapFile = fopen(argv[2], "r+");
   page_size = atoi(argv[3]);
-  hFile.file_ptr = heapFile;
-  hFile.page_size = page_size;
+
+  init_heapfile(&hFile, page_size, heapFile);
 
   slot_size = calculate_slot_size(page_size);
   diff = 0 - slot_size;
@@ -59,10 +59,11 @@ int main(int argc, char *argv[])
   // get the number of lines in the csv file 
   do
   {
-      ch = fgetc(csvNumLines);
-      if (ch == '\n') count++;
+     ch = fgetc(csvNumLines);
+     if (ch == '\n') count++;
   } while (ch != EOF);
- 
+
+  // iterate over the csv file to parse the records 
   for (int i = 0; i < count; i++)
   {
      attr = NULL;
@@ -82,13 +83,11 @@ int main(int argc, char *argv[])
         pid = alloc_page(&hFile);
         write_page(&page, &hFile, pid);
         updateDirEntry(&hFile, pid, diff);
-	//fwrite(page.data, 1, page.page_size, heapFile);
         init_fixed_len_page(&page, page_size, slot_size); 
         rc = add_fixed_len_page(&page, &record); 
         numRecords = 0;
      }
   }
-
 
   numRecords += 1;
   pid = alloc_page(&hFile);
@@ -104,9 +103,5 @@ int main(int argc, char *argv[])
   fclose(heapFile);
   fclose(csvNumLines);
 
-  
-
   return 0;
-
 }
-
