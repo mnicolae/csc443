@@ -43,7 +43,7 @@ int main(int argc, char *argv[])
   pageStream = fopen(argv[2], "w");
 
   page_size = atoi(argv[3]);
-  slot_size = calculate_slot_size(page_size);
+  slot_size = calculate_slot_size(page_size, RECORD_SIZE);
   assert(page_size > RECORD_SIZE + PAGE_STRUCT_SIZE);
 
   init_fixed_len_page(&page, page_size, slot_size); 

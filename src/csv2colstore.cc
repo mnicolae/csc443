@@ -10,8 +10,9 @@
 #include <sstream>
 #include <sys/timeb.h>
 #include <assert.h>
-#include <direct.h>
 #include "heapManager.h"
+#include <string>
+#include <stdlib.h>
 
 using namespace std;
 
@@ -23,14 +24,16 @@ int main(int argc, char *argv[])
 {
   int rc = 0;
   char * delimeter = ",";
+  const char * slash = "/";
+  char * fileNumber;
   char * attr;
   int ch;
-  int count = 0;
+  int lineCount = 0;
   int numRecords = 0;
   Record record;
   Page page;
   int page_size;
-  int slot_size; 
+  int slot_size, record_size; 
   char line[1200];
   ifstream csvStream;
   FILE * csvNumLines;
@@ -39,10 +42,8 @@ int main(int argc, char *argv[])
   int diff;
   struct timeb start, end;
   char * colstore_name;
-  Record[] recordArray;
-  Heapfile[] colstoreFiles;
-  Heapfile heapF;
-  char fileName;
+  char * fileName;
+  char * tuple_id;
 
   if (argc != 4)
   {
@@ -51,13 +52,11 @@ int main(int argc, char *argv[])
   
   csvStream.open(argv[1]);
   csvNumLines = fopen(argv[1], "r");
+
   colstore_name = argv[2];
   page_size = atoi(argv[3]);
-
-  mkdir(colstore_name);
-
-  diff = 0 - slot_size;
-  assert(page_size > RECORD_SIZE + PAGE_STRUCT_SIZE);
+  
+  // Create col store directory here
 
   ftime(&start);
   long start_time = start.time * 1000 + start.millitm; 
@@ -68,26 +67,30 @@ int main(int argc, char *argv[])
      ch = fgetc(csvNumLines);
      if (ch == '\n') 
      {
-       count++;
+       lineCount++;
      }
   } while (ch != EOF);
+  
+  record_size = (10 * lineCount) + sizeof(int) * lineCount; 
+  slot_size = calculate_slot_size(page_size, record_size);
+  diff = 0 - slot_size;
+  assert(page_size > record_size + PAGE_STRUCT_SIZE);
+
+  Record recordArray[lineCount];
+  Heapfile colstoreFiles[lineCount];
 
   for (int w = 0; w < 100; w++)
   {
-    strcpy(fileName, colstore_name);
-    strcat(fileName, "/");
-    strcat(fileName, itoa(count));
+    sprintf(fileNumber, "%d", w);
+    strncpy(fileName, colstore_name, strlen(colstore_name));
+    //strncat(fileName, slash, strlen(slash));
+    //strncat(fileName, fileNumber, strlen(fileNumber));
     heapFile = fopen(fileName, "r+");
-    init_heapfile(&heapF, page_size, heapFile);
-    colstoreFiles[count] = heapF;
+    init_heapfile(&colstoreFiles[w], page_size, heapFile);
   }
 
-  slot_size = calculate_slot_size(page_size, 10 * count);
-
-  init_fixed_len_page(&page, page_size, slot_size); 
-
-  // iterate over the csv file to parse the records 
-  for (int i = 0; i < count; i++)
+  // iterate over the csv file to parse the records into memory 
+  for (int i = 0; i < lineCount; i++)
   {
      attr = NULL;
      csvStream.getline(line, 1200);
@@ -98,43 +101,50 @@ int main(int argc, char *argv[])
        record.push_back(attr);
        attr = strtok(NULL, delimeter);
      }
-
-     RecordArray[i] = record;
+     recordArray[i] = record;
   }
 
+  // Now write the records in column store to disk
   for (int i = 0; i < 100; i++)
   {
-      Record r;
-      for (int j = 0; j < count; j++)
-      {
-         r.push_back(RecordArray[j].at(i));
-      }
-      rc = add_fixed_len_page(&page, &record);
-      numRecords++;
-      if (rc == -1)
-      {
-        pid = alloc_page(&hFile);
-        write_page(&page, &colstoreFiles[i], pid);
-        updateDirEntry(&hFile, pid, diff);
-        init_fixed_len_page(&page, page_size, slot_size); 
-        rc = add_fixed_len_page(&page, &record); 
-        numRecords = 0;
-      }
-  }
+      init_fixed_len_page(&page, page_size, slot_size); 
 
-  numRecords += 1;
-  pid = alloc_page(&hFile);
-  updateDirEntry(&hFile, pid, 0 - numRecords);
-  write_page(&page, &hFile, pid);
+      for (int j = 0; j < lineCount; j++)
+      {
+         Record record;
+
+         // store the tuple id associated with the record
+         sprintf(tuple_id, "%d", j);
+         record.push_back(tuple_id); 
+         record.push_back(recordArray[j].at(i));
+
+         rc = add_fixed_len_page(&page, &record);
+         numRecords++;
+         if (rc == -1)
+         {
+           pid = alloc_page(&colstoreFiles[i]);
+           write_page(&page, &colstoreFiles[i], pid);
+           updateDirEntry(&colstoreFiles[i], pid, diff);
+           init_fixed_len_page(&page, page_size, slot_size); 
+           rc = add_fixed_len_page(&page, &record); 
+           numRecords = 0;
+         }
+      }
+
+      numRecords += 1;
+      pid = alloc_page(&colstoreFiles[i]);
+      updateDirEntry(&colstoreFiles[i], pid, 0 - numRecords);
+      write_page(&page, &colstoreFiles[i], pid);
+  }
 
   ftime(&end);
   long end_time = end.time * 1000 + end.millitm; 
 
   printf("\nTIME: %ld miliseconds\n", end_time - start_time);
-
+  
   csvStream.close();
   fclose(heapFile);
   fclose(csvNumLines);
-
+  
   return 0;
-???
+}

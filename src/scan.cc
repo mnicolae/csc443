@@ -29,7 +29,7 @@ int main(int argc, char *argv[])
    }
 
    page_size = atoi(argv[2]);
-   slot_size = calculate_slot_size(page_size);
+   slot_size = calculate_slot_size(page_size, RECORD_SIZE);
    capacity = page_size / DIR_ENTRY_SIZE;
    heapFile = fopen(argv[1], "r");
    init_heapfile(&heapfile, page_size, heapFile);  

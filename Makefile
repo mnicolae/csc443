@@ -31,7 +31,7 @@ delete: delete.o pageManager.o bufferManager.o heapManager.o
 select: select.o pageManager.o bufferManager.o heapManager.o
 	$(CC) -o $@ $(CCFLAGS) $^         
 
-# csv2colstore:
+csv2colstore: csv2colstore.o pageManager.o bufferManager.o heapManager.o
 
 # select2:
 

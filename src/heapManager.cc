@@ -25,7 +25,7 @@ PageID alloc_page(Heapfile *heapfile)
    Page dirPage, dataPage;
    int dirPageCount = 0;
    int capacity = page_size / DIR_ENTRY_SIZE;
-   int pageSlotSize = calculate_slot_size(page_size); 
+   int pageSlotSize = calculate_slot_size(page_size, RECORD_SIZE); 
    DirectoryEntry dirEntry, nextDirPointer;
    int dirOffset = 0;
    int oldOffset = 0;
@@ -47,7 +47,7 @@ PageID alloc_page(Heapfile *heapfile)
            {
              dirEntry.pid = dirPageCount * (capacity - 1) + i;
              dirEntry.page_offset = (dirEntry.pid + dirPageCount) * page_size;
-             dirEntry.freespace = calculate_slot_size(page_size);
+             dirEntry.freespace = calculate_slot_size(page_size, RECORD_SIZE);
 
              nextDirPointer.freespace--; 
              memcpy(dirPage.data, (const void *) &nextDirPointer, DIR_ENTRY_SIZE);
@@ -288,7 +288,7 @@ void init_directory_page(Page *page, int page_size)
    DirectoryEntry dirEntry, nextDirPointer;
    dirEntry.pid = 0;
    dirEntry.page_offset = 0;
-   dirEntry.freespace = calculate_slot_size(page_size);
+   dirEntry.freespace = calculate_slot_size(page_size, RECORD_SIZE);
    nextDirPointer.page_offset = 0;
    nextDirPointer.pid = 0;
    nextDirPointer.freespace = page_size/DIR_ENTRY_SIZE - 1;

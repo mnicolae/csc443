@@ -12,7 +12,7 @@ int slot_size;
 * Calculate the slot size for a page given the page size
 * and the record size
 */
-int calculate_slot_size(int page_size);
+int calculate_slot_size(int page_size, int record_size);
 
 /**
 * Initializes a page using the given slot size
