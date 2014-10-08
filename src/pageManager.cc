@@ -10,10 +10,10 @@
 /**
 * calculate the slot size for a page
 **/
-int calculate_slot_size(int page_size)
+int calculate_slot_size(int page_size, int recordSize)
 {
-   int page_capacity = page_size / RECORD_SIZE;
-   int page_remainder = page_size - (page_capacity * RECORD_SIZE);
+   int page_capacity = page_size / recordSize;
+   int page_remainder = page_size - (page_capacity * recordSize);
    
    if (page_remainder >= page_capacity)
    {
