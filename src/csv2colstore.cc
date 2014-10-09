@@ -25,7 +25,7 @@ int main(int argc, char *argv[])
   int rc = 0;
   char * delimeter = ",";
   const char * slash = "/";
-  char * fileNumber;
+  char fileNumber[sizeof(int) + 1];
   char * attr;
   int ch;
   int lineCount = 0;
@@ -42,8 +42,8 @@ int main(int argc, char *argv[])
   int diff;
   struct timeb start, end;
   char * colstore_name;
-  char * fileName;
-  char * tuple_id;
+  char tuple_id[sizeof(int) + 1];
+  char fileName[100];
 
   if (argc != 4)
   {
@@ -71,7 +71,7 @@ int main(int argc, char *argv[])
      }
   } while (ch != EOF);
   
-  record_size = (10 * lineCount) + sizeof(int) * lineCount; 
+  record_size = lineCount + sizeof(int); 
   slot_size = calculate_slot_size(page_size, record_size);
   diff = 0 - slot_size;
   assert(page_size > record_size + PAGE_STRUCT_SIZE);
@@ -81,11 +81,11 @@ int main(int argc, char *argv[])
 
   for (int w = 0; w < 100; w++)
   {
-    sprintf(fileNumber, "%d", w);
-    strncpy(fileName, colstore_name, strlen(colstore_name));
+    snprintf(fileNumber, sizeof(int), "%d", w);
+    strncpy(fileName, colstore_name, strlen(colstore_name) + 1);
     //strncat(fileName, slash, strlen(slash));
     //strncat(fileName, fileNumber, strlen(fileNumber));
-    heapFile = fopen(fileName, "r+");
+    heapFile = fopen(fileName, "w");
     init_heapfile(&colstoreFiles[w], page_size, heapFile);
   }
 
@@ -114,7 +114,7 @@ int main(int argc, char *argv[])
          Record record;
 
          // store the tuple id associated with the record
-         sprintf(tuple_id, "%d", j);
+         snprintf(tuple_id, sizeof(int), "%d", j);
          record.push_back(tuple_id); 
          record.push_back(recordArray[j].at(i));
 
