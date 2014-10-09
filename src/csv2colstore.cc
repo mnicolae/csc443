@@ -71,7 +71,7 @@ int main(int argc, char *argv[])
      }
   } while (ch != EOF);
   
-  record_size = lineCount + sizeof(int); 
+  record_size = 10 + sizeof(int); 
   slot_size = calculate_slot_size(page_size, record_size);
   diff = 0 - slot_size;
   assert(page_size > record_size + PAGE_STRUCT_SIZE);
