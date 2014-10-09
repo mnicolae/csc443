@@ -36,8 +36,8 @@ int main(int argc, char *argv[])
   pageStream = fopen(argv[1], "r");
 
   page_size = atoi(argv[2]);
-  slot_size = calculate_slot_size(page_size, RECORD_SIZE);
-  assert(page_size > RECORD_SIZE + PAGE_STRUCT_SIZE);
+  slot_size = calculate_slot_size(page_size, 1000);
+  assert(page_size > 1000 + PAGE_STRUCT_SIZE);
 
   init_fixed_len_page(&page, page_size, slot_size); 
   
@@ -51,7 +51,7 @@ int main(int argc, char *argv[])
      for(int i=0; i < slot_size; i++)
      {
         Record record;
-	read_fixed_len_page(&page, i, &record);
+	read_fixed_len_page(&page, i, &record, 1000);
         // print out a record
         for (int j=0; j < 100; j++)
         {

@@ -71,14 +71,14 @@ int main(int argc, char *argv[])
      }
      
      // write the record to the page
-     rc = add_fixed_len_page(&page, &record); 
+     rc = add_fixed_len_page(&page, &record, 1000); 
      numRecords++;
      if (rc == -1)
      {
         // if the current page is full, write it to page file, allocate a new page
 	fwrite(page.data, 1, page.page_size, pageStream);
         init_fixed_len_page(&page, page_size, slot_size); 
-        rc = add_fixed_len_page(&page, &record); 
+        rc = add_fixed_len_page(&page, &record, 1000); 
         numPages++;
      }
   }
