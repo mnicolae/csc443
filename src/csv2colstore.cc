@@ -77,14 +77,20 @@ int main(int argc, char *argv[])
   assert(page_size > record_size + PAGE_STRUCT_SIZE);
 
   Record recordArray[lineCount];
-  Heapfile colstoreFiles[lineCount];
+  Heapfile colstoreFiles[100];
 
   for (int w = 0; w < 100; w++)
   {
+    // Null-terminate the strings just to be safe
+    fileName[0] = '\0'; 
+    fileNumber[0] = '\0';
+
     snprintf(fileNumber, sizeof(int), "%d", w);
+
     strncpy(fileName, colstore_name, strlen(colstore_name) + 1);
     //strncat(fileName, slash, strlen(slash));
-    //strncat(fileName, fileNumber, strlen(fileNumber));
+    strncat(fileName, fileNumber, strlen(fileNumber));
+
     heapFile = fopen(fileName, "w");
     init_heapfile(&colstoreFiles[w], page_size, heapFile);
   }
@@ -98,10 +104,9 @@ int main(int argc, char *argv[])
    
      while (attr)
      {
-       record.push_back(attr);
+       recordArray[i].push_back(attr);
        attr = strtok(NULL, delimeter);
      }
-     recordArray[i] = record;
   }
 
   // Now write the records in column store to disk
