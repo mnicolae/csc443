@@ -29,7 +29,7 @@ int main(int argc, char *argv[])
    }
 
    page_size = atoi(argv[2]);
-   slot_size = calculate_slot_size(page_size, 1000);
+   slot_size = calculate_slot_size(page_size, RECORD_SIZE);
    capacity = page_size / DIR_ENTRY_SIZE;
    heapFile = fopen(argv[1], "r");
    init_heapfile(&heapfile, page_size, heapFile);  
@@ -57,7 +57,7 @@ int main(int argc, char *argv[])
           {
              Record record;
              // read each record out
-             read_fixed_len_page(&dataPage, i, &record, 1000);
+             read_fixed_len_page(&dataPage, i, &record, RECORD_SIZE);
              if (strncmp(record.at(0), empty, 10))
              {
                for (int j=0; j < 100; j++)

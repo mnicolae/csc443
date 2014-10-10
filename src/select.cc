@@ -40,7 +40,7 @@ int main(int argc, char *argv[])
    end = argv[4];
    page_size = atoi(argv[5]);
    capacity = page_size / DIR_ENTRY_SIZE;
-   slot_size = calculate_slot_size(page_size, 1000);
+   slot_size = calculate_slot_size(page_size, RECORD_SIZE);
    init_heapfile(&heapfile, page_size, heapFile);
 
    ftime(&startTime);
@@ -67,7 +67,7 @@ int main(int argc, char *argv[])
           for (int i = 0; i < slot_size; i++)
           {
              Record record;
-             read_fixed_len_page(&dataPage, i, &record, 1000); 
+             read_fixed_len_page(&dataPage, i, &record, RECORD_SIZE); 
              if (strncmp(record.at(attrNo), empty, 10))
              {
                // check if the attribute satisfies constraints

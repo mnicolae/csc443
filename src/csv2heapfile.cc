@@ -76,7 +76,7 @@ int main(int argc, char *argv[])
        attr = strtok(NULL, delimeter);
      }
      
-     rc = add_fixed_len_page(&page, &record); 
+     rc = add_fixed_len_page(&page, &record, RECORD_SIZE); 
      numRecords++;
      if (rc == -1)
      {
@@ -84,7 +84,7 @@ int main(int argc, char *argv[])
         write_page(&page, &hFile, pid);
         updateDirEntry(&hFile, pid, diff);
         init_fixed_len_page(&page, page_size, slot_size); 
-        rc = add_fixed_len_page(&page, &record); 
+        rc = add_fixed_len_page(&page, &record, RECORD_SIZE); 
         numRecords = 0;
      }
   }

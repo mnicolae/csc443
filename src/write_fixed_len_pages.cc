@@ -55,7 +55,7 @@ int main(int argc, char *argv[])
   } while (ch != EOF);
  
   ftime(&start);
-  long start_time = start.time * 1000 + start.millitm; 
+  long start_time = start.time * RECORD_SIZE + start.millitm; 
 
   for (int i = 0; i < count; i++)
   {
@@ -71,14 +71,14 @@ int main(int argc, char *argv[])
      }
      
      // write the record to the page
-     rc = add_fixed_len_page(&page, &record, 1000); 
+     rc = add_fixed_len_page(&page, &record, RECORD_SIZE); 
      numRecords++;
      if (rc == -1)
      {
         // if the current page is full, write it to page file, allocate a new page
 	fwrite(page.data, 1, page.page_size, pageStream);
         init_fixed_len_page(&page, page_size, slot_size); 
-        rc = add_fixed_len_page(&page, &record, 1000); 
+        rc = add_fixed_len_page(&page, &record, RECORD_SIZE); 
         numPages++;
      }
   }
@@ -87,7 +87,7 @@ int main(int argc, char *argv[])
   fwrite(page.data, 1, page.page_size, pageStream);
 
   ftime(&end);
-  long end_time = end.time * 1000 + end.millitm; 
+  long end_time = end.time * RECORD_SIZE + end.millitm; 
 
   printf("\nNUMBER OF RECORDS: %d", numRecords);
   printf("\nNUMBER OF PAGES: %d", numPages);

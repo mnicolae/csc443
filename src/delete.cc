@@ -41,7 +41,7 @@ int main(int argc, char *argv[])
 
   // read page containing record to be deleted
   read_page(&hFile, pid, &dataPage);
-  read_fixed_len_page(&dataPage, slotNumber, &record);
+  read_fixed_len_page(&dataPage, slotNumber, &record, RECORD_SIZE);
 
   slot = (bool *) dataPage.data + dataPage.page_size - dataPage.slot_size + slotNumber;
   if (!(*slot))
@@ -59,7 +59,7 @@ int main(int argc, char *argv[])
   *slot = false;
   
   // write back the updated data page 
-  write_fixed_len_page(&dataPage, slotNumber, &record);
+  write_fixed_len_page(&dataPage, slotNumber, &record, RECORD_SIZE);
   write_page(&dataPage, &hFile, pid);
 
   fclose(heapFile);

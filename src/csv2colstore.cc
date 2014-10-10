@@ -123,7 +123,7 @@ int main(int argc, char *argv[])
          record.push_back(tuple_id); 
          record.push_back(recordArray[j].at(i));
 
-         rc = add_fixed_len_page(&page, &record);
+         rc = add_fixed_len_page(&page, &record, record_size);
          numRecords++;
          if (rc == -1)
          {
@@ -131,7 +131,7 @@ int main(int argc, char *argv[])
            write_page(&page, &colstoreFiles[i], pid);
            updateDirEntry(&colstoreFiles[i], pid, diff);
            init_fixed_len_page(&page, page_size, slot_size); 
-           rc = add_fixed_len_page(&page, &record); 
+           rc = add_fixed_len_page(&page, &record, record_size); 
            numRecords = 0;
          }
       }

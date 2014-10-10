@@ -69,7 +69,7 @@ int main(int argc, char *argv[])
      if (availablePagePid != -1)
      {
          read_page(&hFile, availablePagePid, &page);
-         rc = add_fixed_len_page(&page, &record); 
+         rc = add_fixed_len_page(&page, &record, RECORD_SIZE); 
          write_page(&page, &hFile, availablePagePid);
          updateDirEntry(&hFile, availablePagePid, -1);      
      }
@@ -77,7 +77,7 @@ int main(int argc, char *argv[])
      {
         availablePagePid = alloc_page(&hFile);
         init_fixed_len_page(&page, page_size, slot_size);
-        rc = add_fixed_len_page(&page, &record);
+        rc = add_fixed_len_page(&page, &record, RECORD_SIZE);
         write_page(&page, &hFile, availablePagePid);
         updateDirEntry(&hFile, availablePagePid, -1);
      }
