@@ -37,13 +37,14 @@ void fixed_len_write(Record *record, void *buf, int attrNum)
 void fixed_len_read(void *buf, int size, Record *record, int attrNum)
 {
   char * attr;
+  attr = (char *) malloc(11);
 
   for (int i = 0; i < attrNum; i++)
   {
-    attr = (char *) malloc(11);
     memcpy(attr, (const void *) buf, 10);
     attr[10] = '\0';
     record->push_back(attr);
     buf = (char *) buf + 10;
   }
+  free(attr);
 }

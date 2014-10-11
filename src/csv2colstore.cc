@@ -37,7 +37,7 @@ int main(int argc, char *argv[])
   char line[1200];
   ifstream csvStream;
   FILE * csvNumLines;
-  FILE * heapFile;
+  FILE * heapFile, *heapFile1;
   PageID pid;
   int diff;
   struct timeb start, end;
@@ -71,29 +71,17 @@ int main(int argc, char *argv[])
      }
   } while (ch != EOF);
   
-  record_size = 10 + sizeof(int); 
+  // 10 bytes for the actual attributes + 10 bytes for the string representation
+  // of the the tuple-id
+  // NOTE: we don't really need 10 bytes to store the string representation of the
+  // tuple-id, but it simplifies calculations.
+  record_size = 10 + 10;
   slot_size = calculate_slot_size(page_size, record_size);
   diff = 0 - slot_size;
   assert(page_size > record_size + PAGE_STRUCT_SIZE);
 
-  Record recordArray[lineCount];
-  Heapfile colstoreFiles[100];
-
-  for (int w = 0; w < 100; w++)
-  {
-    // Null-terminate the strings just to be safe
-    fileName[0] = '\0'; 
-    fileNumber[0] = '\0';
-
-    snprintf(fileNumber, sizeof(int), "%d", w);
-
-    strncpy(fileName, colstore_name, strlen(colstore_name) + 1);
-    //strncat(fileName, slash, strlen(slash));
-    strncat(fileName, fileNumber, strlen(fileNumber));
-
-    heapFile = fopen(fileName, "w");
-    init_heapfile(&colstoreFiles[w], page_size, heapFile);
-  }
+  char recordArray[lineCount][100];
+  Heapfile colstoreFile;
 
   // iterate over the csv file to parse the records into memory 
   for (int i = 0; i < lineCount; i++)
@@ -101,11 +89,13 @@ int main(int argc, char *argv[])
      attr = NULL;
      csvStream.getline(line, 1200);
      attr = strtok(line, delimeter);
-   
+     
+     int j = 0;
      while (attr)
      {
-       recordArray[i].push_back(attr);
+       strncat(recordArray[i], attr, 10);
        attr = strtok(NULL, delimeter);
+       j++;
      }
   }
 
@@ -114,22 +104,40 @@ int main(int argc, char *argv[])
   {
       init_fixed_len_page(&page, page_size, slot_size); 
 
+      // Null-terminate the strings just to be safe
+      fileName[0] = '\0'; 
+      fileNumber[0] = '\0';
+  
+      snprintf(fileNumber, sizeof(int), "%d", i);
+  
+      strncpy(fileName, colstore_name, strlen(colstore_name) + 1);
+      //strncat(fileName, slash, strlen(slash));
+      strncat(fileName, fileNumber, strlen(fileNumber));
+  
+      heapFile1 = fopen(fileName, "w");
+      fclose(heapFile1);
+      heapFile = fopen(fileName, "r+");
+      init_heapfile(&colstoreFile, page_size, heapFile);
+
       for (int j = 0; j < lineCount; j++)
       {
          Record record;
+         char attr[10];
+         attr[0] = '\0';
+         strncpy(attr, &recordArray[j][i], 10);
 
          // store the tuple id associated with the record
          snprintf(tuple_id, sizeof(int), "%d", j);
          record.push_back(tuple_id); 
-         record.push_back(recordArray[j].at(i));
+         record.push_back(attr);
 
          rc = add_fixed_len_page(&page, &record, record_size);
          numRecords++;
          if (rc == -1)
          {
-           pid = alloc_page(&colstoreFiles[i]);
-           write_page(&page, &colstoreFiles[i], pid);
-           updateDirEntry(&colstoreFiles[i], pid, diff);
+           pid = alloc_page(&colstoreFile);
+           write_page(&page, &colstoreFile, pid);
+           updateDirEntry(&colstoreFile, pid, diff);
            init_fixed_len_page(&page, page_size, slot_size); 
            rc = add_fixed_len_page(&page, &record, record_size); 
            numRecords = 0;
@@ -137,9 +145,11 @@ int main(int argc, char *argv[])
       }
 
       numRecords += 1;
-      pid = alloc_page(&colstoreFiles[i]);
-      updateDirEntry(&colstoreFiles[i], pid, 0 - numRecords);
-      write_page(&page, &colstoreFiles[i], pid);
+      pid = alloc_page(&colstoreFile);
+      updateDirEntry(&colstoreFile, pid, 0 - numRecords);
+      write_page(&page, &colstoreFile, pid);
+    
+      fclose(colstoreFile.file_ptr);
   }
 
   ftime(&end);
@@ -148,7 +158,6 @@ int main(int argc, char *argv[])
   printf("\nTIME: %ld miliseconds\n", end_time - start_time);
   
   csvStream.close();
-  fclose(heapFile);
   fclose(csvNumLines);
   
   return 0;
