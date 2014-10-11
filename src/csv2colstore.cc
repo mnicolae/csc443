@@ -149,7 +149,7 @@ int main(int argc, char *argv[])
       updateDirEntry(&colstoreFile, pid, 0 - numRecords);
       write_page(&page, &colstoreFile, pid);
     
-      fclose(colstoreFile.file_ptr);
+      fclose(heapFile);
   }
 
   ftime(&end);
@@ -158,6 +158,7 @@ int main(int argc, char *argv[])
   printf("\nTIME: %ld miliseconds\n", end_time - start_time);
   
   csvStream.close();
+  fclose(heapFile);
   fclose(csvNumLines);
   
   return 0;

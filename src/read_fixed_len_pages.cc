@@ -42,7 +42,7 @@ int main(int argc, char *argv[])
   init_fixed_len_page(&page, page_size, slot_size); 
   
   ftime(&start);
-  long start_time = start.time * RECORD_SIZE + start.millitm; 
+  long start_time = start.time * 1000 + start.millitm; 
   
   fread(page.data, 1, page.page_size, pageStream);
   // read out all the pages and then read out all the records

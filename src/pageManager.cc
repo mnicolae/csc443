@@ -139,7 +139,6 @@ void write_fixed_len_page(Page *page, int slot, Record *r, int record_size)
   int attrNum = record_size / 10;
   fixed_len_write(r, buf, attrNum);
   memcpy(record_offset, buf, record_size);
-  free(buf);
 }
 
 /**
