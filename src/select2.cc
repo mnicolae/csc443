@@ -29,21 +29,19 @@ int main(int argc, char *argv[])
    const char * start, * end;
    char * empty = "          ";
    struct timeb startTime, endTime;
-   char * fileName, *name1, *name2;
 
    if (argc != 6)
    {
      printf("Usage: select2 <colstore_name> <attribute_id> <start> <end> <page_size>\n");
    }
 
-   name1 = argv[1];
-   name2 = argv[2];
-   //strcpy(fileName, name1);
-   //strcat(fileName, name2);
+   string name1 = argv[1];
+   string name2 = argv[2];
 
-   printf("%s\n", fileName);
+   string fileName = name1 + name2;
+   const char *name = fileName.c_str();
 
-   heapFile = fopen("colstore0", "r");
+   heapFile = fopen(name, "r");
    start = argv[3];
    end = argv[4];
    page_size = atoi(argv[5]);
