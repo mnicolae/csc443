@@ -44,7 +44,7 @@ int main(int argc, char *argv[])
   init_fixed_len_page(&dataPage, page_size, slot_size); 
 
   // get the page that has the pid, read out the record that is in slot slotNumber
-  read_page(&hFile, pid, &dataPage);
+  read_page(&hFile, pid, &dataPage, RECORD_SIZE);
   read_fixed_len_page(&dataPage, slotNumber, &record, RECORD_SIZE);
 
   // udpate the record's attribute value
@@ -52,7 +52,7 @@ int main(int argc, char *argv[])
   
   // write tha changes back to heapfile
   write_fixed_len_page(&dataPage, slotNumber, &record, RECORD_SIZE);
-  write_page(&dataPage, &hFile, pid);
+  write_page(&dataPage, &hFile, pid, RECORD_SIZE);
 
   fclose(heapFile);
 

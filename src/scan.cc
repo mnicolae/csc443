@@ -36,7 +36,7 @@ int main(int argc, char *argv[])
 
    fseek(heapfile.file_ptr, 0, SEEK_SET);
    init_fixed_len_page(&dataPage, page_size, slot_size);
-   init_directory_page(&dirPage, page_size); 
+   init_directory_page(&dirPage, page_size, RECORD_SIZE); 
 
    // read in the first directory page
    fread(dirPage.data, page_size, 1, heapFile);
@@ -52,7 +52,7 @@ int main(int argc, char *argv[])
         if (dirEntry.page_offset != 0)
         {
           // read a data page out
-          read_page(&heapfile, dirEntry.pid, &dataPage);
+          read_page(&heapfile, dirEntry.pid, &dataPage, RECORD_SIZE);
           for (int i = 0; i < slot_size; i++)
           {
              Record record;
@@ -84,7 +84,7 @@ int main(int argc, char *argv[])
      if (nextDirPointer.page_offset != 0)
      {
         fseek(heapFile, nextDirPointer.page_offset, SEEK_SET);
-        init_directory_page(&dirPage, page_size); 
+        init_directory_page(&dirPage, page_size, RECORD_SIZE); 
         fread(dirPage.data, page_size, 1, heapFile);
         memcpy((void *) &nextDirPointer, dirPage.data, DIR_ENTRY_SIZE);
      }

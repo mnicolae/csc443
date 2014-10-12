@@ -65,21 +65,21 @@ int main(int argc, char *argv[])
        attr = strtok(NULL, delimeter);
      }
      
-     availablePagePid = findAvailablePage(&hFile);
+     availablePagePid = findAvailablePage(&hFile, RECORD_SIZE);
      if (availablePagePid != -1)
      {
-         read_page(&hFile, availablePagePid, &page);
+         read_page(&hFile, availablePagePid, &page, RECORD_SIZE);
          rc = add_fixed_len_page(&page, &record, RECORD_SIZE); 
-         write_page(&page, &hFile, availablePagePid);
-         updateDirEntry(&hFile, availablePagePid, -1);      
+         write_page(&page, &hFile, availablePagePid, RECORD_SIZE);
+         updateDirEntry(&hFile, availablePagePid, -1, RECORD_SIZE);      
      }
      else
      {
-        availablePagePid = alloc_page(&hFile);
+        availablePagePid = alloc_page(&hFile, RECORD_SIZE);
         init_fixed_len_page(&page, page_size, slot_size);
         rc = add_fixed_len_page(&page, &record, RECORD_SIZE);
-        write_page(&page, &hFile, availablePagePid);
-        updateDirEntry(&hFile, availablePagePid, -1);
+        write_page(&page, &hFile, availablePagePid, RECORD_SIZE);
+        updateDirEntry(&hFile, availablePagePid, -1, RECORD_SIZE);
      }
   }
 

@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <fstream>
 #include <string.h>
 #include <vector>
@@ -28,19 +29,26 @@ int main(int argc, char *argv[])
    const char * start, * end;
    char * empty = "          ";
    struct timeb startTime, endTime;
+   char * fileName, *name1, *name2;
 
    if (argc != 6)
    {
-     printf("Usage: select <heapfile> <attribute_id> <start> <end> <page_size>");
+     printf("Usage: select2 <colstore_name> <attribute_id> <start> <end> <page_size>\n");
    }
 
-   heapFile = fopen(argv[1], "r");
-   attrNo = atoi(argv[2]);
+   name1 = argv[1];
+   name2 = argv[2];
+   //strcpy(fileName, name1);
+   //strcat(fileName, name2);
+
+   printf("%s\n", fileName);
+
+   heapFile = fopen("colstore0", "r");
    start = argv[3];
    end = argv[4];
    page_size = atoi(argv[5]);
    capacity = page_size / DIR_ENTRY_SIZE;
-   slot_size = calculate_slot_size(page_size, RECORD_SIZE);
+   slot_size = calculate_slot_size(page_size, 20);
    init_heapfile(&heapfile, page_size, heapFile);
 
    ftime(&startTime);
@@ -49,7 +57,7 @@ int main(int argc, char *argv[])
    // read out first directory page and first directory page pointer
    fseek(heapfile.file_ptr, 0, SEEK_SET);
    init_fixed_len_page(&dataPage, page_size, slot_size);
-   init_directory_page(&dirPage, page_size, RECORD_SIZE); 
+   init_directory_page(&dirPage, page_size, 20); 
 
    fread(dirPage.data, page_size, 1, heapFile);
    
@@ -63,17 +71,17 @@ int main(int argc, char *argv[])
         memcpy((void *) &dirEntry, dirPage.data + DIR_ENTRY_SIZE * i, DIR_ENTRY_SIZE);
         if (dirEntry.page_offset != 0)
         {
-          read_page(&heapfile, dirEntry.pid, &dataPage, RECORD_SIZE);
+          read_page(&heapfile, dirEntry.pid, &dataPage, 20);
           for (int i = 0; i < slot_size; i++)
           {
              Record record;
-             read_fixed_len_page(&dataPage, i, &record, RECORD_SIZE); 
-             if (strncmp(record.at(attrNo), empty, 10))
+             read_fixed_len_page(&dataPage, i, &record, 20); 
+             if (strncmp(record.at(1), empty, 10))
              {
                // check if the attribute satisfies constraints
-               if (strncmp(start, record.at(attrNo), 10) <= 0 && strncmp(record.at(attrNo), end, 10) <= 0)
+               if (strncmp(start, record.at(1), 10) <= 0 && strncmp(record.at(1), end, 10) <= 0)
                {
-                   printf("%s\n", record.at(attrNo));
+                   printf("%s\n", record.at(1));
                }
              }
           }
@@ -87,7 +95,7 @@ int main(int argc, char *argv[])
      if (nextDirPointer.page_offset != 0)
      {
         fseek(heapFile, nextDirPointer.page_offset, SEEK_SET);
-        init_directory_page(&dirPage, page_size, RECORD_SIZE); 
+        init_directory_page(&dirPage, page_size, 20); 
         fread(dirPage.data, page_size, 1, heapFile);
         memcpy((void *) &nextDirPointer, dirPage.data, DIR_ENTRY_SIZE);
      }

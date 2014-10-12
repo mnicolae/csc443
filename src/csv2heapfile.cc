@@ -80,9 +80,9 @@ int main(int argc, char *argv[])
      numRecords++;
      if (rc == -1)
      {
-        pid = alloc_page(&hFile);
-        write_page(&page, &hFile, pid);
-        updateDirEntry(&hFile, pid, diff);
+        pid = alloc_page(&hFile, RECORD_SIZE);
+        write_page(&page, &hFile, pid, RECORD_SIZE);
+        updateDirEntry(&hFile, pid, diff, RECORD_SIZE);
         init_fixed_len_page(&page, page_size, slot_size); 
         rc = add_fixed_len_page(&page, &record, RECORD_SIZE); 
         numRecords = 0;
@@ -90,9 +90,9 @@ int main(int argc, char *argv[])
   }
 
   numRecords += 1;
-  pid = alloc_page(&hFile);
-  updateDirEntry(&hFile, pid, 0 - numRecords);
-  write_page(&page, &hFile, pid);
+  pid = alloc_page(&hFile, RECORD_SIZE);
+  updateDirEntry(&hFile, pid, 0 - numRecords, RECORD_SIZE);
+  write_page(&page, &hFile, pid, RECORD_SIZE);
 
   ftime(&end);
   long end_time = end.time * 1000 + end.millitm; 

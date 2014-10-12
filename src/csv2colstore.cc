@@ -135,9 +135,9 @@ int main(int argc, char *argv[])
          numRecords++;
          if (rc == -1)
          {
-           pid = alloc_page(&colstoreFile);
-           write_page(&page, &colstoreFile, pid);
-           updateDirEntry(&colstoreFile, pid, diff);
+           pid = alloc_page(&colstoreFile, 20);
+           write_page(&page, &colstoreFile, pid, 20);
+           updateDirEntry(&colstoreFile, pid, diff, 20);
            init_fixed_len_page(&page, page_size, slot_size); 
            rc = add_fixed_len_page(&page, &record, record_size); 
            numRecords = 0;
@@ -145,9 +145,9 @@ int main(int argc, char *argv[])
       }
 
       numRecords += 1;
-      pid = alloc_page(&colstoreFile);
-      updateDirEntry(&colstoreFile, pid, 0 - numRecords);
-      write_page(&page, &colstoreFile, pid);
+      pid = alloc_page(&colstoreFile, 20);
+      updateDirEntry(&colstoreFile, pid, 0 - numRecords, 20);
+      write_page(&page, &colstoreFile, pid, 20);
     
       fclose(heapFile);
   }

@@ -32,8 +32,10 @@ select: select.o pageManager.o bufferManager.o heapManager.o
 	$(CC) -o $@ $(CCFLAGS) $^         
 
 csv2colstore: csv2colstore.o pageManager.o bufferManager.o heapManager.o
+	$(CC) -o $@ $(CCFLAGS) $^
 
-# select2:
+select2: select2.o pageManager.o bufferManager.o heapManager.o
+	$(CC) -o $@ $(CCFLAGS) $^
 
 # select3:
 

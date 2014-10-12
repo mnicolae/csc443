@@ -40,7 +40,7 @@ int main(int argc, char *argv[])
   init_fixed_len_page(&dataPage, page_size, slot_size); 
 
   // read page containing record to be deleted
-  read_page(&hFile, pid, &dataPage);
+  read_page(&hFile, pid, &dataPage, RECORD_SIZE);
   read_fixed_len_page(&dataPage, slotNumber, &record, RECORD_SIZE);
 
   slot = (bool *) dataPage.data + dataPage.page_size - dataPage.slot_size + slotNumber;
@@ -55,12 +55,12 @@ int main(int argc, char *argv[])
   }
   
   // update data entry freespace info and data page slot info 
-  updateDirEntry(&hFile, pid, -1); 
+  updateDirEntry(&hFile, pid, -1, RECORD_SIZE); 
   *slot = false;
   
   // write back the updated data page 
   write_fixed_len_page(&dataPage, slotNumber, &record, RECORD_SIZE);
-  write_page(&dataPage, &hFile, pid);
+  write_page(&dataPage, &hFile, pid, RECORD_SIZE);
 
   fclose(heapFile);
   return 0;
