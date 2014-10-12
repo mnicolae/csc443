@@ -1,0 +1,6 @@
+[
+{"name" : "student_number", "length" : 9},
+{"name" : "account_name", "length" : 8},
+{"name" : "start_year", "length" : 4},
+{"name" : "cgpa", "length" : 4}
+]
