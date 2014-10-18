@@ -62,11 +62,7 @@ def generate_data(schema, out_file, nrecords):
   for x in result:
     out = csv.writer(f, delimiter=',', quoting=csv.QUOTE_NONE)
     out.writerow(x)
-    
-  #with open(out_file, "w") as f:
-  #  for x in result:
-  #    print >>f, ",".join(x)
-    
+
 if __name__ == '__main__':
   import sys, json
   if not len(sys.argv) == 4:
