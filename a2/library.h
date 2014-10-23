@@ -77,4 +77,4 @@ void merge_runs(RunIterator* iterators[], int num_runs, FILE *out_fp,
                 long start_pos, char *buf, long buf_size);
 
 int calc_record_size(Schema *schema);
-
+int compare_records(Record *r1, Record *r2);
