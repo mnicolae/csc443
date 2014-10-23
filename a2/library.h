@@ -7,6 +7,7 @@
 typedef struct {
   char *name;
   int length;
+  int type;
 } Attribute;
 
 /**
