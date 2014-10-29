@@ -5,6 +5,14 @@ import math
 import random
 import numpy
 import csv
+import os
+
+def write2file(filename, records):
+  f = open(filename, "w")
+  for r in records:
+    f.write(str(r) + '\n')
+  f.close()
+
 
 '''
 You should implement this script to generate test data for your
@@ -35,33 +43,46 @@ def generate_data(schema, out_file, nrecords):
   numbers = "0123456789"
   
   print "Generating %d records" % nrecords
-  i = 0
-  l = []
   
   for attribute in schema:
-    l.append([])
     if attribute["type"] == "string":
-      for j in range(nrecords):
-        l[i].append(''.join([random.choice(letters) for j in range(attribute["length"])]))
+      tmp = []
+      for k in range(nrecords):
+        tmp.append(''.join([random.choice(letters) for j in range(attribute["length"])]))
+      write2file(attribute["name"] + ".tmp", tmp)
     elif attribute["type"] == "integer":
       if "distribution" in attribute:
         if attribute["distribution"]["name"] == "uniform":
-          l[i].extend(numpy.random.randint(attribute["distribution"]["min"], attribute["distribution"]["max"] + 1, nrecords))
+          tmp = []
+          tmp.extend(numpy.random.randint(attribute["distribution"]["min"], attribute["distribution"]["max"] + 1, nrecords))
+          write2file(attribute["name"] + ".tmp", tmp)
     elif attribute["type"] == "float":
       if "distribution" in attribute:
-              if attribute["distribution"]["name"] == "normal":
-                rv = norm(attribute["distribution"]["mu"], attribute["distribution"]["sigma"])
-                a = rv.rvs(nrecords)
-                l[i] = l[i] + [math.ceil(x*100)/100 for x in a] 
-    i = i + 1
-      
-  result = zip(*l)
-  
-  f = open(out_file, "w")
-  
-  for x in result:
-    out = csv.writer(f, delimiter=',', quoting=csv.QUOTE_NONE)
-    out.writerow(x)
+        if attribute["distribution"]["name"] == "normal":
+          rv = norm(attribute["distribution"]["mu"], attribute["distribution"]["sigma"])
+          a = rv.rvs(nrecords)
+          write2file(attribute["name"] + ".tmp", [math.ceil(x*100)/100 for x in a])
+
+  # open the temporary column files
+  files = []
+  for attribute in schema:
+    files.append(open(attribute["name"] + ".tmp"))
+
+  # re-assemble row from columns
+  outfile = open(out_file, "w")
+  out = csv.writer(outfile, delimiter=',', quoting=csv.QUOTE_NONE)
+  for k in range(nrecords):
+    line = []
+    for f in files:
+      line.append(f.readline().strip())
+    out.writerow(line)
+
+  # close files
+  for f in files:
+    f.close()
+    os.remove(f.name);
+  outfile.close();
+
 
 if __name__ == '__main__':
   import sys, json
