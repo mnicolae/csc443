@@ -362,6 +362,7 @@ RunIterator::RunIterator(std::ifstream *pagefile, long sp, long rl, long bs, Sch
 	record_length = sr->getRecordSize();
 
 	cur_pos = start_pos;
+        i = 0;
 }
 
 RunIterator::~RunIterator() { /* do nothing */}
@@ -385,12 +386,25 @@ Record *RunIterator::next() {
 
 	// increment to next record
 	cur_pos += record_length;
+        i++;
 
 	return record;
 }
  
 bool RunIterator::has_next() {
 	return cur_pos < start_pos + run_length; // note: run_length has to be in bytes, not pages.	
+}
+
+int RunIterator::get_number_of_records() {
+	int cur_pos_tmp = cur_pos;
+        int count = 0;
+
+        while (cur_pos_tmp < start_pos + run_length) {
+		count += 1;
+		cur_pos_tmp += record_length;
+	}
+
+	return count;        
 }
 
 
@@ -423,6 +437,40 @@ void merge_runs(RunIterator* iterators[], int num_runs, FILE *out_fp,
                 long start_pos, char *buf, long buf_size)
 {
   // Your implementation
+  
+  // TODO finish
+  /*
+  MinHeapNode *harr = new MinHeapNode[num_runs];
+  for (int i = 0; i < num_runs; i++) {
+     harr[i].element = iterators[i].next();
+     harr[i].i = i;
+     harr[i].j = 1;
+  }
+  MinHeap hp(harr, num_runs);
+
+  // Now one by one get the minimum element from min
+  // heap and replace it with next element of its array
+  for (int count = 0; count < n * num_runs; count++)
+  {
+      // Get the minimum element and store it in output
+      MinHeapNode root = hp.getMin();
+      output[count] = root.element;
+ 
+      // Find the next element that will replace current
+      // root of heap. The next element belongs to same
+      // array as the current root.
+      if (root.j < n)
+      {
+          root.element = arr[root.i][root.j];
+          root.j += 1;
+      }
+      // If root was the last element of its array
+      else root.element =  INT_MAX; //INT_MAX is for infinite
+ 
+      // Replace root with next element of array
+      hp.replaceMin(root);
+  }
+  */
 }
 
 int calc_record_size(Schema *schema)
@@ -437,4 +485,82 @@ int calc_record_size(Schema *schema)
    return length;
 }
 
+// TODO finish this part
+// http://www.geeksforgeeks.org/merge-k-sorted-arrays/
+
+// A min heap node
+struct MinHeapNode
+{
+    Record element; // The element to be stored
+    int i; // index of the array from which the element is taken
+    int j; // index of the next element to be picked from array
+};
+
+// Prototype of a utility function to swap two min heap nodes
+void swap(MinHeapNode *x, MinHeapNode *y);
+
+// A class for Min Heap
+class MinHeap
+{
+    MinHeapNode *harr; // pointer to array of elements in heap
+    int heap_size; // size of min heap
+public:
+    // Constructor: creates a min heap of given size
+    MinHeap(MinHeapNode a[], int size);
+ 
+    // to heapify a subtree with root at given index
+    void MinHeapify(int );
+ 
+    // to get index of left child of node at index i
+    int left(int i) { return (2*i + 1); }
+ 
+    // to get index of right child of node at index i
+    int right(int i) { return (2*i + 2); }
+ 
+    // to get the root
+    MinHeapNode getMin() { return harr[0]; }
+ 
+    // to replace root with new node x and heapify() new root
+    void replaceMin(MinHeapNode x) { harr[0] = x;  MinHeapify(0); }
+};
+
+// FOLLOWING ARE IMPLEMENTATIONS OF STANDARD MIN HEAP METHODS
+// FROM CORMEN BOOK
+// Constructor: Builds a heap from a given array a[] of given size
+MinHeap::MinHeap(MinHeapNode a[], int size)
+{
+    heap_size = size;
+    harr = a;  // store address of array
+    int i = (heap_size - 1)/2;
+    while (i >= 0)
+    {
+        MinHeapify(i);
+        i--;
+    }
+}
+
+// A recursive method to heapify a subtree with root at given index
+// This method assumes that the subtrees are already heapified
+void MinHeap::MinHeapify(int i)
+{
+    int l = left(i);
+    int r = right(i);
+    int smallest = i;
+
+    if (l < heap_size && compareRecords(harr[l].element, harr[r].element) == -1)
+        smallest = l;
+    if (r < heap_size && compareRecords(harr[l].element, harr[smallest].element) == -1)
+        smallest = r;
+    if (smallest != i)
+    {
+        swap(&harr[i], &harr[smallest]);
+        MinHeapify(smallest);
+    }
+}
+
+// A utility function to swap two elements
+void swap(MinHeapNode *x, MinHeapNode *y)
+{
+    MinHeapNode temp = *x;  *x = *y;  *y = temp;
+}
 
