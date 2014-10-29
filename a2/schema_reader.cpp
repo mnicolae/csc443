@@ -1,11 +1,17 @@
 #include "schema_reader.h" 
 
+Schema * SCHEMA;
+
 Attribute* SchemaReader::createAttribute(std::string name, int len, int type) {
     Attribute* attr = new Attribute;
     attr->name.append(name);
     attr->length = len;
     attr->type = type;
     return attr;
+}
+
+SchemaReader::SchemaReader(Schema * sm) {
+	schema = sm;
 }
 
 SchemaReader::SchemaReader(std::string filename) {
@@ -16,7 +22,7 @@ SchemaReader::SchemaReader(std::string filename) {
     
     // initialize the sorting attributes
     schema->n_sort_attrs = 0;
-    schema->sort_attrs = NULL;
+    schema->sort_attrs = new int[schema->nattrs];
 }
 
 SchemaReader::~SchemaReader() { 
@@ -97,7 +103,7 @@ void SchemaReader::addSortingAttributes(std::string csvAttrList) {
 	
 	if (count > 0) {
 		schema->n_sort_attrs = count;
-		schema->sort_attrs = new int[count];
+		//schema->sort_attrs = new int[count];
 		for(i=0; i < count; i++) {
 			schema->sort_attrs[i] = sort_indices[i];
 		}		
@@ -148,14 +154,18 @@ void SchemaReader::serialize(std::string csvstring, char* data) {
 
 	attr_idx++;
   }
-
 }
+
+void SchemaReader::deserialize(char*data, Record* record) {
+
+} 
 
 ExternalSorter::ExternalSorter(std::string schema_filename) {
   reader = new SchemaReader(schema_filename);
   mem_capacity = 3072; // default memory capacity is 3KB
   mem = malloc(mem_capacity);
   record_size = reader->getRecordSize();
+  SCHEMA = reader->getSchema();
 }
 
 ExternalSorter::~ExternalSorter() {
@@ -173,25 +183,24 @@ void ExternalSorter::addSortingAttributes(std::string attrList) {
   reader->addSortingAttributes(attrList);
 }
 
-int ExternalSorter::compareRecord(const void* r1, const void* r2) {
+int compareRecord(const void* r1, const void* r2) {
   int i, j, offset, length, type;
   void * buff1, *buff2;
-  
-  Schema* schema = reader->getSchema();
 
-  for (i = 0; i < schema->n_sort_attrs; i++) {
+  for (i = 0; i < SCHEMA->n_sort_attrs; i++) {
+    offset = 0;
+    for (j = 0; j < SCHEMA->sort_attrs[i]; j++) {
+      offset += SCHEMA->attrs[j]->length;
+    }  //TODO; fix sorting on second attribute
 
-    for (j = 0; j < schema->sort_attrs[i]; j++) {
-      offset += schema->attrs[j]->length;
-      type = schema->attrs[j + 1]->type;
-	  if (type == STRING) { 
-		length = schema->attrs[j + 1]->length;
-	  } else if (type == INTEGER) {
-		length = sizeof(int);
-	  } else if (type == FLOAT) {
-		length = sizeof(float);
-	  } 
-    }
+   type = SCHEMA->attrs[i]->type;
+   if (type == STRING) { 
+	length = SCHEMA->attrs[i]->length;
+   } else if (type == INTEGER) {
+	length = sizeof(int);
+   } else if (type == FLOAT) {
+	length = sizeof(float);
+   } 
 
     buff1 = malloc(length);
     memset(buff1, 0, length);
@@ -208,13 +217,13 @@ int ExternalSorter::compareRecord(const void* r1, const void* r2) {
        {
           free(buff1);
           free(buff2);
-          return -1;
+          return 1;
        }
        else if ((*(int *) data1) < (*(int *) data2))
        {
           free(buff1);
           free(buff2);
-          return 1;
+          return -1;
        }
     }
 
@@ -224,13 +233,13 @@ int ExternalSorter::compareRecord(const void* r1, const void* r2) {
       {
          free(buff1);
          free(buff2);
-         return -1;
+         return 1;
       }
       else if ((*(float *) data1) < (*(float *) data2))
       {
          free(buff1);
          free(buff2);
-         return 1;
+         return -1;
       }
     }
 
@@ -241,13 +250,13 @@ int ExternalSorter::compareRecord(const void* r1, const void* r2) {
       {
         free(buff1);
         free(buff2);
-        return -1;
+        return 1;
       }
       else if ( rc < 0)
       {
         free(buff1);
         free(buff2);
-        return 1;
+        return -1;
       }
     }
    
@@ -312,7 +321,10 @@ void ExternalSorter::csv2pagefile(std::string csv_file, std::string page_file) {
 	} // end while
 
 	//TODO: sort the buffer
-	//	qsort(mem, record_count, record_size, compareRecord);
+        int (*myCompareRecords)(const void *, const void *);
+        myCompareRecords = &compareRecord;
+
+	qsort(mem, record_count, record_size, myCompareRecords);
 
 	// write the last page to disk
 	outfile.write((char*)mem, buffer_size);
@@ -324,12 +336,15 @@ void ExternalSorter::csv2pagefile(std::string csv_file, std::string page_file) {
 
 
 /* g++ -Wall -I. -g3 -o reader schema_reader.cpp jsoncpp.o */
-
+/*
 int main() {
 
-  ExternalSorter sorter("schema_example.json");
+  ExternalSorter sorter("schema_example2.json");
+  sorter.addSortingAttributes("student_number,cgpa");
+
   // sorter.setMemCapacity(3*1024*1024); // 3MB; if not set, default is 3 KB
   sorter.csv2pagefile("data_example.csv", "data_example.pages");
 
 return 0;
 }
+*/

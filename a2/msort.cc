@@ -40,13 +40,6 @@ int main(int argc, const char* argv[]) {
     exit(1);
   }
 
-  // Initialize the Schema structure
-  Attribute my_attribute;
-  Schema my_schema;
-
-  my_schema.nattrs = schema.size();
-  my_schema.n_sort_attrs = (argc - 7) + 1;
-
   // Print out the schema
   string attr_name;
   int attr_len;
