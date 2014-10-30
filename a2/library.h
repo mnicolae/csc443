@@ -59,7 +59,7 @@ public:
     void addSortingAttributes(std::string csvAttrList);
 	int getRecordSize();
 	void serialize(std::string csvstring, char* data);
-	void deserialize(char* in, Record * record);
+	void deserialize(char* data, Record *rec);
 };
 
 int compareRecord(const void* rec1, const void* rec2); // for use by qsort()
@@ -96,12 +96,18 @@ void mk_runs(FILE *in_fp, FILE *out_fp, long run_length, Schema *schema);
 class RunIterator {
 private:
 	std::ifstream *fp; 
-	long cur_pos;
+	long cur_pos; // current position in page file
 	long start_pos; 
 	long run_length; 
 	long buf_size;
-        SchemaReader *reader;
+    SchemaReader *reader;
 	int record_length;
+
+	void* buffer;
+	int cur_rec_pos; // current position in buffer
+
+	int fillBuffer();
+
 public:
   /**
    * Creates an interator using the `buf_size` to
@@ -127,6 +133,8 @@ public:
    * of the run
    */
   bool has_next();
+
+  int get_number_of_records();
 };
 
 /**
