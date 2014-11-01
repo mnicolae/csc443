@@ -159,6 +159,9 @@ void SchemaReader::serialize(std::string csvstring, char* data) {
   }
 }
 
+/*
+ * Used by RunIterator.next()
+ */
 void SchemaReader::deserialize(char* data, Record *rec) {
 
 }
@@ -191,6 +194,10 @@ void ExternalSorter::setMemCapacity(int cap) {
   free(mem);
   mem_capacity = cap;
   mem = malloc(mem_capacity);
+}
+
+SchemaReader* ExternalSorter::getSchemaReader() {
+	return reader;
 }
 
 void ExternalSorter::addSortingAttributes(std::string attrList) {
@@ -281,13 +288,13 @@ int compareRecord(const void* r1, const void* r2) {
   return 0;
 }
 
-void ExternalSorter::csv2pagefile(std::string csv_file, std::string page_file) {
+int ExternalSorter::csv2pagefile(std::string csv_file, std::string page_file) {
   std::ifstream infile(csv_file.c_str(), std::ifstream::binary);
   std::ofstream outfile(page_file.c_str(), std::ofstream::binary);
 
 	if (!infile.is_open()) {
 	  std::cout << "unable to open csv file";
-	  return;
+	  return 0;
 	}
 
 	// initialize the buffer
@@ -297,6 +304,7 @@ void ExternalSorter::csv2pagefile(std::string csv_file, std::string page_file) {
 	int buffer_capacity = mem_capacity / record_size; // number of records in buffer
 	int buffer_size = buffer_capacity * record_size; // number of bytes in buffer
 	int record_count = 0;
+	int total_record_count = 0;
 	char* record_pointer = (char*) mem;	
 	std::string line;
 
@@ -314,6 +322,7 @@ void ExternalSorter::csv2pagefile(std::string csv_file, std::string page_file) {
 
 		  // update states for next iteration
 		  record_pointer += record_size;
+		  total_record_count++;
 		  record_count++;
 		  continue;
 		} 
@@ -331,10 +340,11 @@ void ExternalSorter::csv2pagefile(std::string csv_file, std::string page_file) {
 		// serialize and put the record in the buffer
 		reader->serialize(line, record_pointer);
 		record_count = 1;
+		total_record_count++;
 
 	} // end while
 
-	//TODO: sort the buffer
+	// sort the buffer
         int (*myCompareRecords)(const void *, const void *);
         myCompareRecords = &compareRecord;
 
@@ -346,7 +356,11 @@ void ExternalSorter::csv2pagefile(std::string csv_file, std::string page_file) {
 	// close files
 	infile.close();
 	outfile.close();
+
+	return total_record_count;
 }
+
+
 ////////////////////////////////////////////////////////////
 //
 //     RunIterator class   
@@ -425,18 +439,9 @@ bool RunIterator::has_next() {
 	return true; // note: run_length has to be in bytes, not pages.
 }
 
-int RunIterator::get_number_of_records() {
-	int cur_pos_tmp = cur_pos;
-        int count = 0;
-
-        while (cur_pos_tmp < start_pos + run_length) {
-		count += 1;
-		cur_pos_tmp += record_length;
-	}
-
-	return count;        
+SchemaReader* RunIterator::getReader() {
+	return reader;
 }
-
 
 ////////////////////////////////////////////////////////////
 //
@@ -447,179 +452,118 @@ int RunIterator::get_number_of_records() {
 
 void mk_runs(std::string in_fn, std::string out_fn, long run_length, Schema *schema)
 {
-//  int record_size = calc_record_size(schema);
-//  int buf_size = run_length * page_size;
-//  void *buf = malloc(buf_size);
-  
-//  int (*myCompareRecords)(const void *, const void *);
-//  myCompareRecords = &compare_records;
-  
-//  fread((char *) buf, buf_size, 1, in_fp);
-//  qsort(buf, (page_size / record_size) * run_length , buf_size, myCompareRecords);
-
-//  fwrite(buf, buf_size, 1, out_fp);
-//  free(buf);
 	ExternalSorter sorter(schema, run_length, in_fn, out_fn);
 	sorter.csv2pagefile(in_fn, out_fn);
 }
 
+void merge_runs(RunIterator* iterators[], int num_runs, std::ofstream *out_fp,
+		long start_pos, char *buf, long buf_size) {
+	int i, j;
+	std::vector<char*> heap;
+	int rating[num_runs];
+	int compared, smaller;
 
-////////////////////////////////////////////////////////////
-//
-//     Min Heap functions
-//
-////////////////////////////////////////////////////////////
+	for (i = 0; i < num_runs; i++) {
+		heap.push_back(iterators[i]->next()->data);
+		rating[i] = i;
+		for (j = i - 1; j >= 0; j--) {
+			compared = compareRecord(heap[i], heap[j]);
+			if (compared == 0) {
+				rating[j] = rating[i];
+				break;
+			}
 
+			if (compared == 1) { // i > j
+				smaller = rating[i];
+				rating[i] = j;
+				rating[j] = smaller;
+			}
+		}
+	}
 
+	int done = 0;
+	int record_size = iterators[0]->getReader()->getRecordSize();
+	int cur_rec_pos = 0; // current record position in buffer
+	int buf_capacity = buf_size / record_size;
+	char *buf_ptr = buf;
+	while (done < num_runs) {
 
-// TODO finish this part
-// http://www.geeksforgeeks.org/merge-k-sorted-arrays/
+		if (cur_rec_pos < buf_size) {
+			// if buf is full, write it out to disk
+			out_fp.write(buf, buf_size);
+			memset(buf, 0, buf_size);
+			cur_rec_pos = 0;
+		}
 
-// A min heap node
-struct MinHeapNode
-{
-    Record element; // The element to be stored
-    int i; // index of the array from which the element is taken
-    int j; // index of the next element to be picked from array
-};
+		// find where the smallest record, i.e. the one with rating = 0
+		for (i = 0; i < num_runs && rating[i] != 0; i++) {
+		}
 
-// Prototype of a utility function to swap two min heap nodes
-void swap(MinHeapNode *x, MinHeapNode *y);
+		// put it into buf
+		memcpy(buf_ptr, heap[i], record_size);
+		*buf_ptr += cur_rec_pos;
 
-// A class for Min Heap
-class MinHeap
-{
-    MinHeapNode *harr; // pointer to array of elements in heap
-    int heap_size; // size of min heap
-public:
-    // Constructor: creates a min heap of given size
-    MinHeap(MinHeapNode a[], int size);
- 
-    // to heapify a subtree with root at given index
-    void MinHeapify(int );
- 
-    // to get index of left child of node at index i
-    int left(int i) { return (2*i + 1); }
- 
-    // to get index of right child of node at index i
-    int right(int i) { return (2*i + 2); }
- 
-    // to get the root
-    MinHeapNode getMin() { return harr[0]; }
- 
-    // to replace root with new node x and heapify() new root
-    void replaceMin(MinHeapNode x) { harr[0] = x;  MinHeapify(0); }
-};
+		// replace smallest one with next record of the runIterator where it comes from
+		if (iterators[i]->has_next()) {
+			heap[i] = iterators[i]->next()->data; // TODO: this might not work
+		} else {
+			// if one iterator is empty, increase done by 1
+			rating[i] = -1;
+			done++;
+		}
 
+		// re-sort the rating
+		int rating_i = 0;
+		for (j = 0; j < num_runs; i++) {
+			if (i == j || rating[j] == -1) {
+				continue;
+			}
 
+			compared = compareRecord(heap[i], heap[j]);
+			if (compared == -1) { // i < j
+				rating[j]++;
+			} else if (compared == 1) { // i > j
+				rating_i++;
+			}
+		}
+		rating[i] = rating_i;
 
-// FOLLOWING ARE IMPLEMENTATIONS OF STANDARD MIN HEAP METHODS
-// FROM CORMEN BOOK
-// Constructor: Builds a heap from a given array a[] of given size
-MinHeap::MinHeap(MinHeapNode a[], int size)
-{
-    heap_size = size;
-    harr = a;  // store address of array
-    int i = (heap_size - 1)/2;
-    while (i >= 0)
-    {
-        MinHeapify(i);
-        i--;
-    }
-}
-
-// A recursive method to heapify a subtree with root at given index
-// This method assumes that the subtrees are already heapified
-void MinHeap::MinHeapify(int i)
-{
-    int l = left(i);
-    int r = right(i);
-    int smallest = i;
-
-    if (l < heap_size && compareRecord(harr[l].element.data, harr[i].element.data) == -1)
-        smallest = l;
-    if (r < heap_size && compareRecord(harr[r].element.data, harr[smallest].element.data) == -1)
-        smallest = r;
-    if (smallest != i)
-    {
-        swap(&harr[i], &harr[smallest]);
-        MinHeapify(smallest);
-    }
-}
-
-// A utility function to swap two elements
-void swap(MinHeapNode *x, MinHeapNode *y)
-{
-    MinHeapNode temp = *x;  *x = *y;  *y = temp;
-}
-
-
-void merge_runs(RunIterator* iterators[], int num_runs, FILE *out_fp,
-                long start_pos, char *buf, long buf_size)
-{
-  // Your implementation
-
-  // TODO finish
-
+	} // end while
 
 
 }
-
 
 int main() {
 	SchemaReader reader("schema_example.json");
-	int run_length = 2;
-	std::string in_fn = "";
-	std::string out_fn = "";
-	ExternalSorter sorter(reader.getSchema(), run_length, in_fn, out_fn); //TODO define the constructor
-	sorter.csv2pagefile(in_fn, out_fn);
+	int record_size = reader.getRecordSize();
 
+	std::string in_fn = "data_example.csv";
+	std::string out_fn = "pagefile";
+	std::string pass1_fn = "pass1.pages";
 
 	int num_runs = 4;
+	int buf_size = 3072 / (num_runs + 1);
+	RunIterator** iterators = new RunIterator*[num_runs];
+//	mk_runs(in_fn, out_fn, reader.getSchema());
 
-	MinHeapNode *harr = new MinHeapNode[num_runs];
-	RunIterator* iterators = new RunIterator[num_runs];
-	  for (int i = 0; i < num_runs; i++) {
-	     harr[i].element = iterators[i]->next();
-	     harr[i].i = i;
-	     harr[i].j = 1;
-	  }
-	  MinHeap hp(harr, num_runs);
 
-	  // Now one by one get the minimum element from min
-	  // heap and replace it with next element of its array
-	  int empty_runs = 0;
-	  int count = 0;
-	  while (1) {
+	ExternalSorter sorter("schema_example.json"); //TODO define the constructor
+	int record_count = sorter.csv2pagefile(in_fn, out_fn);
 
-		  for(int j = 0; j < num_runs; j++) {
-			  if (!iterators[i]->has_next())
-				  empty_runs++;
-		  }
+	int run_length = (record_count / num_runs) * record_size;
+	int last_run_length = (record_count % num_runs) * record_size;
 
-		  if (empty_runs < num_runs) {
-			  empty_runs = 0;
-		  } else if (empty_runs == num_runs) { // no more records
-			  break;
-		  }
+	std::ifstream page_fp(out_fn.c_str(), std::ifstream::binary);
+	int i = 0;
+	for (i = 0 ; i < num_runs - 1; i++) {
+		iterators[i] = new RunIterator(&page_fp, i * run_length, run_length, buf_size, sorter.getSchemaReader());
+	}
+	iterators[i] = new RunIterator(&page_fp, i * run_length, last_run_length, buf_size, sorter.getSchemaReader());
 
-	      // Get the minimum element and store it in output
-	      MinHeapNode root = hp.getMin();
-	      output[count] = root.element;
+	std::ofstream out_fp(pass1_fn.c_str(), std::ofstream::binary);
+	char * buf = (char*) malloc(buf_size);
+	merge_runs(iterators, num_runs, &out_fp, 0, buf, buf_size);
 
-	      // Find the next element that will replace current
-	      // root of heap. The next element belongs to same
-	      // array as the current root.
-	      if (iterator[root.i]->has_next())
-	      {
-	          root.element = arr[root.i][root.j];
-	          root.j += 1;
-	      }
-	      // If root was the last element of its array
-	      else  root.element = BIGGEST_RECORD; //TODO: define BIGGEST_RECORD
 
-	      // Replace root with next element of array
-	      hp.replaceMin(root);
-	  }
 }
 

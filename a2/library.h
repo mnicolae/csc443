@@ -1,12 +1,14 @@
 #include <cstdio>
 #include <stdlib.h>     /* qsort */
 #include <iostream> 
-#include <fstream> 
+#include <fstream>
 #include "json/json.h"
 #include <cstring>
 #include <sstream>
 
-enum Types {INTEGER = 0, STRING = 1, FLOAT = 2};
+enum Types {
+	INTEGER = 0, STRING = 1, FLOAT = 2
+};
 
 /**
  * An attribute schema. You should probably modify
@@ -28,7 +30,7 @@ typedef struct {
 
 typedef struct {
 	Attribute **attrs;
-    int nattrs;
+	int nattrs;
 	int *sort_attrs;
 	int n_sort_attrs;
 } Schema;
@@ -38,25 +40,23 @@ typedef struct {
  * to the schema and some data. 
  */
 typedef struct {
-  Schema* schema;
-  char* data;
+	Schema* schema;
+	char* data;
 } Record;
 
-
-
-class SchemaReader{
+class SchemaReader {
 private:
 	std::ifstream* schema_file;
-    Schema* schema;
-    Attribute* createAttribute(std::string name, int len, int type);
+	Schema* schema;
+	Attribute* createAttribute(std::string name, int len, int type);
 	Schema* read();
-    void deallocate();
+	void deallocate();
 public:
-	SchemaReader(Schema * sm); 
+	SchemaReader(Schema * sm);
 	SchemaReader(std::string);
 	~SchemaReader();
-    Schema* getSchema();
-    void addSortingAttributes(std::string csvAttrList);
+	Schema* getSchema();
+	void addSortingAttributes(std::string csvAttrList);
 	int getRecordSize();
 	void serialize(std::string csvstring, char* data);
 	void deserialize(char* data, Record *rec);
@@ -66,21 +66,22 @@ int compareRecord(const void* rec1, const void* rec2); // for use by qsort()
 
 class ExternalSorter {
 private:
-  SchemaReader* reader;
-  std::ifstream csv_file;
-  std::ofstream page_file;
-  int mem_capacity; 
-  void* mem;
-  int record_size;
+	SchemaReader* reader;
+	std::ifstream csv_file;
+	std::ofstream page_file;
+	int mem_capacity;
+	void* mem;
+	int record_size;
 
-  
 public:
-  ExternalSorter(Schema *sm, int mem_cap, std::string csv_fn, std::string page_fn);
-  ExternalSorter(std::string schema_filename);
-  ~ExternalSorter();
-  void setMemCapacity(int cap);
-  void addSortingAttributes(std::string attrList);
-  void csv2pagefile(std::string csv_filename, std::string pagefilename);  
+	ExternalSorter(Schema *sm, int mem_cap, std::string csv_fn,
+			std::string page_fn);
+	ExternalSorter(std::string schema_filename);
+	~ExternalSorter();
+	void setMemCapacity(int cap);
+	void addSortingAttributes(std::string attrList);
+	int csv2pagefile(std::string csv_filename, std::string pagefilename);
+	SchemaReader* getSchemaReader();
 };
 
 /**
@@ -95,46 +96,46 @@ void mk_runs(FILE *in_fp, FILE *out_fp, long run_length, Schema *schema);
  */
 class RunIterator {
 private:
-	std::ifstream *fp; 
+	std::ifstream *fp;
 	long cur_pos; // current position in page file
-	long start_pos; 
-	long run_length; 
+	long start_pos;
+	long run_length;
 	long buf_size;
-    SchemaReader *reader;
+	SchemaReader *reader;
 	int record_length;
 
-	void* buffer;
+	char* buffer;
 	int cur_rec_pos; // current position in buffer
 
 	int fillBuffer();
 
 public:
-  /**
-   * Creates an interator using the `buf_size` to
-   * scan through a run that starts at `start_pos`
-   * with length `run_length`.
-   */
-  
-  RunIterator(std::ifstream *pagefile, long start_pos, long run_length, long buf_size,
-              SchemaReader *sr);
+	/**
+	 * Creates an interator using the `buf_size` to
+	 * scan through a run that starts at `start_pos`
+	 * with length `run_length`.
+	 */
 
-  /**
-   * free memory
-   */
-  ~RunIterator();
+	RunIterator(std::ifstream *pagefile, long start_pos, long run_length,
+			long buf_size, SchemaReader *sr);
 
-  /**
-   * reads the next record
-   */
-  Record* next();
+	/**
+	 * free memory
+	 */
+	~RunIterator();
 
-  /**
-   * return false if iterator reaches the end
-   * of the run
-   */
-  bool has_next();
+	/**
+	 * reads the next record
+	 */
+	Record* next();
 
-  int get_number_of_records();
+	/**
+	 * return false if iterator reaches the end
+	 * of the run
+	 */
+	bool has_next();
+
+	SchemaReader* getReader();
 };
 
 /**
@@ -143,8 +144,51 @@ public:
  * Write the merged runs to `out_fp` starting at position `start_pos`.
  * Cannot use more than `buf_size` of heap memory allocated to `buf`.
  */
-void merge_runs(RunIterator* iterators[], int num_runs, FILE *out_fp,
-                long start_pos, char *buf, long buf_size);
+void merge_runs(RunIterator* iterators[], int num_runs, std::ofstream *out_fp,
+		long start_pos, char *buf, long buf_size);
 
-int calc_record_size(Schema *schema);
 int compare_records(const void *rec1, const void *rec2);
+
+
+////////////////////////////////////////////////////////////
+//
+//     Min Heap functions
+//
+////////////////////////////////////////////////////////////
+
+
+// A min heap node
+struct MinHeapNode
+{
+    Record element; // The element to be stored
+    int i; // index of the array from which the element is taken
+    int j; // index of the next element to be picked from array
+};
+
+// Prototype of a utility function to swap two min heap nodes
+void swap(MinHeapNode *x, MinHeapNode *y);
+
+// A class for Min Heap
+class MinHeap
+{
+    MinHeapNode *harr; // pointer to array of elements in heap
+    int heap_size; // size of min heap
+public:
+    // Constructor: creates a min heap of given size
+    MinHeap(MinHeapNode a[], int size);
+
+    // to heapify a subtree with root at given index
+    void MinHeapify(int );
+
+    // to get index of left child of node at index i
+    int left(int i) { return (2*i + 1); }
+
+    // to get index of right child of node at index i
+    int right(int i) { return (2*i + 2); }
+
+    // to get the root
+    MinHeapNode getMin() { return harr[0]; }
+
+    // to replace root with new node x and heapify() new root
+    void replaceMin(MinHeapNode x) { harr[0] = x;  MinHeapify(0); }
+};
