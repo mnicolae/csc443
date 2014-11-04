@@ -166,7 +166,7 @@ void SchemaReader::deserialize(char* data, Record *rec) {
 	char* ptr = data;
 	int rec_len;
 	rec->schema = schema;
-	rec_len = schema->getRecordSize();
+	rec_len = getRecordSize();
 	rec->data = (char*) malloc(rec_len);
 	memcpy(rec->data, data, rec_len);
 }
@@ -184,7 +184,7 @@ ExternalSorter::ExternalSorter(Schema *sm, int mem_cap, std::string csv_fn, std:
 
 ExternalSorter::ExternalSorter(std::string schema_filename) {
   reader = new SchemaReader(schema_filename);
-  mem_capacity = 3072; // default memory capacity is 3KB
+  mem_capacity = 3072; //TODO: default value should be 3MB when running the experiments
   mem = malloc(mem_capacity);
   record_size = reader->getRecordSize();
   SCHEMA = reader->getSchema();
@@ -313,6 +313,11 @@ int ExternalSorter::csv2pagefile(std::string csv_file, std::string page_file) {
 	char* record_pointer = (char*) mem;	
 	std::string line;
 
+	// initialize pointer to compareRecord function
+    int (*myCompareRecords)(const void *, const void *);
+    myCompareRecords = &compareRecord;
+
+
 	while (infile.good()) {
 		getline(infile, line); // read a line
 
@@ -333,7 +338,7 @@ int ExternalSorter::csv2pagefile(std::string csv_file, std::string page_file) {
 		} 
 
 		/* if buffer is full */ 
-		//TODO: sort the buffer
+		qsort(mem, record_count, record_size, myCompareRecords);
 
 		// write it out to disk
 		outfile.write((char*)mem, buffer_size);
@@ -350,8 +355,6 @@ int ExternalSorter::csv2pagefile(std::string csv_file, std::string page_file) {
 	} // end while
 
 	// sort the buffer
-        int (*myCompareRecords)(const void *, const void *);
-        myCompareRecords = &compareRecord;
 
 	qsort(mem, record_count, record_size, myCompareRecords);
 
@@ -495,7 +498,7 @@ void merge_runs(RunIterator* iterators[], int num_runs, std::ofstream *out_fp,
 
 		if (cur_rec_pos < buf_size) {
 			// if buf is full, write it out to disk
-			out_fp.write(buf, buf_size);
+			out_fp->write(buf, buf_size);
 			memset(buf, 0, buf_size);
 			cur_rec_pos = 0;
 		}
@@ -552,7 +555,7 @@ int main() {
 //	mk_runs(in_fn, out_fn, reader.getSchema());
 
 
-	ExternalSorter sorter("schema_example.json"); //TODO define the constructor
+	ExternalSorter sorter("schema_example.json");
 	int record_count = sorter.csv2pagefile(in_fn, out_fn);
 
 	int run_length = (record_count / num_runs) * record_size;
