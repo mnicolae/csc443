@@ -552,14 +552,14 @@ int main() {
 	int num_runs = 4;
 	int buf_size = 3072 / (num_runs + 1);
 	RunIterator** iterators = new RunIterator*[num_runs];
-//	mk_runs(in_fn, out_fn, reader.getSchema());
-
 
 	ExternalSorter sorter("schema_example.json");
 	int record_count = sorter.csv2pagefile(in_fn, out_fn);
 
 	int run_length = (record_count / num_runs) * record_size;
 	int last_run_length = (record_count % num_runs) * record_size;
+
+	mk_runs(in_fn, out_fn, run_length, reader.getSchema());
 
 	std::ifstream page_fp(out_fn.c_str(), std::ifstream::binary);
 	int i = 0;
