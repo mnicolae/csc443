@@ -163,7 +163,12 @@ void SchemaReader::serialize(std::string csvstring, char* data) {
  * Used by RunIterator.next()
  */
 void SchemaReader::deserialize(char* data, Record *rec) {
-
+	char* ptr = data;
+	int rec_len;
+	rec->schema = schema;
+	rec_len = schema->getRecordSize();
+	rec->data = (char*) malloc(rec_len);
+	memcpy(rec->data, data, rec_len);
 }
 
 
