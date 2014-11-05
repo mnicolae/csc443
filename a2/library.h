@@ -74,7 +74,7 @@ private:
 	int record_size;
 
 public:
-	ExternalSorter(Schema *sm, int mem_cap, std::string csv_fn,
+	ExternalSorter(SchemaReader* rdr, int mem_cap, std::string csv_fn,
 			std::string page_fn);
 	ExternalSorter(std::string schema_filename);
 	~ExternalSorter();
