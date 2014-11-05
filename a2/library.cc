@@ -388,6 +388,8 @@ RunIterator::RunIterator(std::ifstream *pagefile, long sp, long rl, long bs, Sch
 	reader = sr;
 	record_length = sr->getRecordSize();
 	cur_pos = start_pos;
+	buffer = (char *) malloc(buf_size);
+	memset(buffer, 0, buf_size);
 
 	fillBuffer();
 	cur_rec_pos = 0;
@@ -415,7 +417,7 @@ int RunIterator::fillBuffer() {
 	return 1;
 }
 
-RunIterator::~RunIterator() { /* do nothing */}
+RunIterator::~RunIterator() { free(buffer); }
 
 Record *RunIterator::next() {
 
@@ -443,6 +445,14 @@ Record *RunIterator::next() {
  
 bool RunIterator::has_next() {
 
+	if (cur_rec_pos >= buf_size)
+	{
+		if (fillBuffer() == -1)
+		{
+			return false;
+		}
+		cur_rec_pos = 0;
+	}
 	// check if the next record is empty (only happens in last page of run) ...
 	char* rec_ptr = (char*) buffer + cur_rec_pos;
 	// ... by checking if the first byte is zero
@@ -485,10 +495,10 @@ void merge_runs(RunIterator* iterators[], int num_runs, std::ofstream *out_fp,
 				break;
 			}
 
-			if (compared == 1) { // i > j
-				smaller = rating[i];
-				rating[i] = j;
-				rating[j] = smaller;
+			if (compared == -1) { // i > j
+				smaller = rating[j];
+				rating[j] = rating[i];
+				rating[i] = smaller;
 			}
 		}
 	}
@@ -500,7 +510,7 @@ void merge_runs(RunIterator* iterators[], int num_runs, std::ofstream *out_fp,
 	char *buf_ptr = buf;
 	while (done < num_runs) {
 
-		if (cur_rec_pos < buf_size) {
+		if (cur_rec_pos > buf_size) {
 			// if buf is full, write it out to disk
 			out_fp->write(buf, buf_size);
 			memset(buf, 0, buf_size);
@@ -526,16 +536,31 @@ void merge_runs(RunIterator* iterators[], int num_runs, std::ofstream *out_fp,
 
 		// re-sort the rating
 		int rating_i = 0;
-		for (j = 0; j < num_runs; i++) {
-			if (i == j || rating[j] == -1) {
-				continue;
+		if (rating[i] == -1)
+		{
+			for (j = 0; j < num_runs; j++)
+			{
+				if (rating[j] != -1)
+				{
+					rating[j]--;
+				}
 			}
+		}
+		else
+		{
+			//TODO: fix this re-sorting
+			rating[i] = 0;
+			for (j = 0; j < num_runs; j++) {
+				if (i == j || rating[j] == -1) {
+					continue;
+				}
 
-			compared = compareRecord(heap[i], heap[j]);
-			if (compared == -1) { // i < j
-				rating[j]++;
-			} else if (compared == 1) { // i > j
-				rating_i++;
+				compared = compareRecord(heap[i], heap[j]);
+				if (compared == -1) { // i < j
+					rating[j]++;
+				} else if (compared == 1) { // i > j
+					rating_i++;
+				}
 			}
 		}
 		rating[i] = rating_i;
@@ -559,7 +584,8 @@ int main() {
 
 
 	int num_runs = 4;
-	int buf_size = 3072 / (num_runs + 1);
+	int buf_size = 125 / (num_runs + 1);
+	sorter.setMemCapacity(125);
 	RunIterator** iterators = new RunIterator*[num_runs];
 
 	int record_size = 25;
@@ -575,6 +601,7 @@ int main() {
 
 	std::ofstream out_fp(pass1_fn.c_str(), std::ofstream::binary);
 	char * buf = (char*) malloc(buf_size);
+	memset(buf, 0, buf_size);
 	merge_runs(iterators, num_runs, &out_fp, 0, buf, buf_size);
 
 
