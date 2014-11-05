@@ -178,8 +178,12 @@ void SchemaReader::deserialize(char* data, Record *rec) {
 //
 ////////////////////////////////////////////////////////////
 
-ExternalSorter::ExternalSorter(Schema *sm, int mem_cap, std::string csv_fn, std::string page_fn) {
-	//TODO
+ExternalSorter::ExternalSorter(SchemaReader *rdr, int mem_cap, std::string csv_fn, std::string page_fn) {
+	reader = rdr;
+	mem_capacity = mem_cap;
+	mem = malloc(mem_capacity);
+	record_size = reader->getRecordSize();
+	SCHEMA = reader->getSchema();
 }
 
 ExternalSorter::ExternalSorter(std::string schema_filename) {
@@ -460,8 +464,8 @@ SchemaReader* RunIterator::getReader() {
 
 void mk_runs(std::string in_fn, std::string out_fn, long run_length, Schema *schema)
 {
-	ExternalSorter sorter(schema, run_length, in_fn, out_fn);
-	sorter.csv2pagefile(in_fn, out_fn);
+//	ExternalSorter sorter(schema, run_length, in_fn, out_fn);
+//	sorter.csv2pagefile(in_fn, out_fn);
 }
 
 void merge_runs(RunIterator* iterators[], int num_runs, std::ofstream *out_fp,
@@ -542,24 +546,25 @@ void merge_runs(RunIterator* iterators[], int num_runs, std::ofstream *out_fp,
 }
 
 int main() {
-	SchemaReader reader("schema_example.json");
-	int record_size = reader.getRecordSize();
-
 	std::string in_fn = "data_example.csv";
 	std::string out_fn = "pagefile";
 	std::string pass1_fn = "pass1.pages";
+
+	// create page file
+	ExternalSorter sorter("schema_example.json");
+	// add sort attributes to schema
+	sorter.addSortingAttributes("cgpa");
+	int record_count = sorter.csv2pagefile(in_fn, out_fn);
+
+
 
 	int num_runs = 4;
 	int buf_size = 3072 / (num_runs + 1);
 	RunIterator** iterators = new RunIterator*[num_runs];
 
-	ExternalSorter sorter("schema_example.json");
-	int record_count = sorter.csv2pagefile(in_fn, out_fn);
-
+	int record_size = 25;
 	int run_length = (record_count / num_runs) * record_size;
 	int last_run_length = (record_count % num_runs) * record_size;
-
-	mk_runs(in_fn, out_fn, run_length, reader.getSchema());
 
 	std::ifstream page_fp(out_fn.c_str(), std::ifstream::binary);
 	int i = 0;
