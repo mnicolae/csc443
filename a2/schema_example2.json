@@ -1,0 +1,8 @@
+[
+    {"name" : "student_number", "length" : 9, "type" : "string"},
+    {"name" : "account_name", "length" : 8, "type" : "string"},
+    {"name" : "start_year", "length" : 4, "type" : "integer",
+        "distribution" : {"name" : "uniform", "min" : 2007, "max" : 2014}},
+    {"name" : "cgpa", "length" : 4, "type" : "float", 
+        "distribution" : {"name" : "normal", "mu" : 2.95, "sigma" : 0.2}}
+]
