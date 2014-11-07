@@ -4,6 +4,7 @@
 #include <fstream>
 
 #include "leveldb/db.h"
+#include "leveldb/iterator.h"
 #include "json/json.h"
 #include <time.h>
 #include <sys/timeb.h>
@@ -14,13 +15,14 @@ using namespace std;
 
 int main(int argc, const char* argv[]) {
 
-  if (argc != 4) {
+  if (argc != 5) {
   	cout << "ERROR: invalid input parameters!" << endl;
-  	cout << "Please enter <schema_file> <input_file> <out_index>" << endl;
+  	cout << "Please enter <schema_file> <input_file> <out_index> <sort attr>" << endl;
   	exit(1);
   }
 
   string schema_file(argv[1]);
+  string sort_attrs(argv[4]);
   int ch;
   int offset_counter;
   char * attr;
@@ -35,6 +37,7 @@ int main(int argc, const char* argv[]) {
   struct timeb start, end;
   int count = 0;
   FILE * fp;
+  int index;
   
   csvStream.open(argv[2]);
   csvNumLines = fopen(argv[2], "r");
@@ -42,12 +45,16 @@ int main(int argc, const char* argv[]) {
   /**
   * opens a database connection to "./leveldb_dir"
   */
+  //RecordComparator cmp;
   leveldb::DB *db;
   leveldb::Options options;
   options.create_if_missing = true;
+  //options.comparator = &cmp;
   leveldb::Status status = leveldb::DB::Open(options, "./leveldb_dir", &db);
 
   SchemaReader reader(schema_file);
+  reader.addSortingAttributes(sort_attrs);
+
   record_size = reader.getRecordSize();
   buf = malloc(record_size);
 
@@ -58,6 +65,7 @@ int main(int argc, const char* argv[]) {
 
   char line[record_size + schema->nattrs]; 
   char line_value[record_size + schema->nattrs]; 
+  char * attr_array[schema->nattrs];
 
   ftime(&start);
   long start_time = start.time * 1000 + start.millitm; 
@@ -88,18 +96,20 @@ int main(int argc, const char* argv[]) {
 
      for (int j = 0; j < schema->nattrs; j++)
      {
-       memcpy(buf + offset_counter, attr, schema->attrs[j]->length);
+       attr_array[j] = (char *) malloc(schema->attrs[j]->length);
+       memcpy(attr_array[j], attr, schema->attrs[j]->length);
        attr = strtok(NULL, delimeter);
-       offset_counter += schema->attrs[j]->length;
      }
 
-     // construct the record
-     record.data = (char *) buf;
-     record.data[record_size] = '\0'; // null-terminate the record data
-     record.schema = schema;
+     for (int j = 0 ; j < schema->n_sort_attrs; j++)
+     {
+        index = schema->sort_attrs[j];
+	memcpy(buf + offset_counter, attr_array[index], schema->attrs[index]->length);
+        offset_counter += schema->attrs[index]->length;
+     }
      
-     memcpy(unique_key, &record, record_size);
-     memcpy(unique_key + record_size, &unique_counter, sizeof(long));
+     memcpy(unique_key, buf, offset_counter);
+     memcpy(unique_key + offset_counter, &unique_counter, sizeof(long));
   
      unique_counter++;
 
@@ -128,5 +138,4 @@ int main(int argc, const char* argv[]) {
 
   return 0;
 }
-
 
