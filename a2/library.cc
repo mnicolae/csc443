@@ -570,6 +570,7 @@ void merge_runs(RunIterator* iterators[], int num_runs, std::ofstream *out_fp,
 
 }
 
+/*
 int main() {
 	std::string in_fn = "data_example.csv";
 	std::string out_fn = "pagefile";
@@ -606,4 +607,4 @@ int main() {
 
 
 }
-
+*/

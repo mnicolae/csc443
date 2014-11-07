@@ -15,7 +15,7 @@ jsoncpp.o: jsoncpp.cpp json/json.h
 msort: msort.cc library.o jsoncpp.o
 	$(CC) -o $@ $^ $(CCFLAGS)
 
-bsort: bsort.cc jsoncpp.o
+bsort: bsort.cc jsoncpp.o library.o
 	$(CC) -o $@ $^ $(CCFLAGS) $(LEVELDB_OPTS)
 	
 clean:
