@@ -29,13 +29,13 @@ int main(int argc, const char* argv[]) {
   ifstream csvStream;
   FILE * csvNumLines;
   int record_size;
-  //char *out_index = argv[3];
+  const char *out_index = argv[3];
   long unique_counter = 0;
   Record record;
   struct timeb start, end;
   int count = 0;
-  char line[1200];
-
+  FILE * fp;
+  
   csvStream.open(argv[2]);
   csvNumLines = fopen(argv[2], "r");
 
@@ -56,6 +56,9 @@ int main(int argc, const char* argv[]) {
 
   Schema * schema = reader.getSchema();
 
+  char line[record_size + schema->nattrs]; 
+  char line_value[record_size + schema->nattrs]; 
+
   ftime(&start);
   long start_time = start.time * 1000 + start.millitm; 
 
@@ -71,9 +74,12 @@ int main(int argc, const char* argv[]) {
   // parse the records in the csv file
   for (int i = 0; i < count; i++)
   {
+     csvStream.getline(line, record_size + schema->nattrs);
+
      // add the key
-     csvStream.getline(line, 1200);
-     leveldb::Slice value(line, sizeof(line));
+     strncpy(line_value, line, record_size + schema->nattrs);
+     line_value[record_size + schema->nattrs] = '\0';
+     leveldb::Slice value(line_value, record_size + schema->nattrs);
 
      attr = NULL;
      offset_counter = 0;
@@ -89,13 +95,26 @@ int main(int argc, const char* argv[]) {
 
      // construct the record
      record.data = (char *) buf;
+     record.data[record_size] = '\0'; // null-terminate the record data
      record.schema = schema;
      
      memcpy(unique_key, &record, record_size);
      memcpy(unique_key + record_size, &unique_counter, sizeof(long));
   
      unique_counter++;
+
      db->Put(leveldb::WriteOptions(), leveldb::Slice(unique_key, sizeof(unique_key)), value);
+  }
+
+  fp = fopen(out_index, "w+");
+
+  // Index will be sorted in order of value, so a left-to-right traversal
+  // yields the sorted order.
+  leveldb::Iterator *it = db->NewIterator(leveldb::ReadOptions());
+  for (it->SeekToFirst(); it->Valid(); it->Next()) {
+      leveldb::Slice value = it->value();
+      fprintf(fp, "%s", value.ToString().c_str()); // No \n, since the \n is part of the record.
+      fprintf(fp, "\n");
   }
 
   ftime(&end);
@@ -103,8 +122,9 @@ int main(int argc, const char* argv[]) {
 
   printf("\nTIME: %ld miliseconds\n", end_time - start_time);
 
+  fclose(fp);
   csvStream.close();
-//  delete db;
+  delete db;
 
   return 0;
 }
