@@ -74,7 +74,7 @@ private:
 	int record_size;
 
 public:
-	ExternalSorter(Schema *sm, int mem_cap, std::string csv_fn,
+	ExternalSorter(SchemaReader* rdr, int mem_cap, std::string csv_fn,
 			std::string page_fn);
 	ExternalSorter(std::string schema_filename);
 	~ExternalSorter();
@@ -149,46 +149,3 @@ void merge_runs(RunIterator* iterators[], int num_runs, std::ofstream *out_fp,
 
 int compare_records(const void *rec1, const void *rec2);
 
-
-////////////////////////////////////////////////////////////
-//
-//     Min Heap functions
-//
-////////////////////////////////////////////////////////////
-
-
-// A min heap node
-struct MinHeapNode
-{
-    Record element; // The element to be stored
-    int i; // index of the array from which the element is taken
-    int j; // index of the next element to be picked from array
-};
-
-// Prototype of a utility function to swap two min heap nodes
-void swap(MinHeapNode *x, MinHeapNode *y);
-
-// A class for Min Heap
-class MinHeap
-{
-    MinHeapNode *harr; // pointer to array of elements in heap
-    int heap_size; // size of min heap
-public:
-    // Constructor: creates a min heap of given size
-    MinHeap(MinHeapNode a[], int size);
-
-    // to heapify a subtree with root at given index
-    void MinHeapify(int );
-
-    // to get index of left child of node at index i
-    int left(int i) { return (2*i + 1); }
-
-    // to get index of right child of node at index i
-    int right(int i) { return (2*i + 2); }
-
-    // to get the root
-    MinHeapNode getMin() { return harr[0]; }
-
-    // to replace root with new node x and heapify() new root
-    void replaceMin(MinHeapNode x) { harr[0] = x;  MinHeapify(0); }
-};

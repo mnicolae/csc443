@@ -163,7 +163,12 @@ void SchemaReader::serialize(std::string csvstring, char* data) {
  * Used by RunIterator.next()
  */
 void SchemaReader::deserialize(char* data, Record *rec) {
-
+	char* ptr = data;
+	int rec_len;
+	rec->schema = schema;
+	rec_len = getRecordSize();
+	rec->data = (char*) malloc(rec_len);
+	memcpy(rec->data, data, rec_len);
 }
 
 
@@ -173,13 +178,17 @@ void SchemaReader::deserialize(char* data, Record *rec) {
 //
 ////////////////////////////////////////////////////////////
 
-ExternalSorter::ExternalSorter(Schema *sm, int mem_cap, std::string csv_fn, std::string page_fn) {
-	//TODO
+ExternalSorter::ExternalSorter(SchemaReader *rdr, int mem_cap, std::string csv_fn, std::string page_fn) {
+	reader = rdr;
+	mem_capacity = mem_cap;
+	mem = malloc(mem_capacity);
+	record_size = reader->getRecordSize();
+	SCHEMA = reader->getSchema();
 }
 
 ExternalSorter::ExternalSorter(std::string schema_filename) {
   reader = new SchemaReader(schema_filename);
-  mem_capacity = 3072; // default memory capacity is 3KB
+  mem_capacity = 3072; //TODO: default value should be 3MB when running the experiments
   mem = malloc(mem_capacity);
   record_size = reader->getRecordSize();
   SCHEMA = reader->getSchema();
@@ -308,6 +317,11 @@ int ExternalSorter::csv2pagefile(std::string csv_file, std::string page_file) {
 	char* record_pointer = (char*) mem;	
 	std::string line;
 
+	// initialize pointer to compareRecord function
+    int (*myCompareRecords)(const void *, const void *);
+    myCompareRecords = &compareRecord;
+
+
 	while (infile.good()) {
 		getline(infile, line); // read a line
 
@@ -328,7 +342,7 @@ int ExternalSorter::csv2pagefile(std::string csv_file, std::string page_file) {
 		} 
 
 		/* if buffer is full */ 
-		//TODO: sort the buffer
+		qsort(mem, record_count, record_size, myCompareRecords);
 
 		// write it out to disk
 		outfile.write((char*)mem, buffer_size);
@@ -345,8 +359,6 @@ int ExternalSorter::csv2pagefile(std::string csv_file, std::string page_file) {
 	} // end while
 
 	// sort the buffer
-        int (*myCompareRecords)(const void *, const void *);
-        myCompareRecords = &compareRecord;
 
 	qsort(mem, record_count, record_size, myCompareRecords);
 
@@ -376,6 +388,8 @@ RunIterator::RunIterator(std::ifstream *pagefile, long sp, long rl, long bs, Sch
 	reader = sr;
 	record_length = sr->getRecordSize();
 	cur_pos = start_pos;
+	buffer = (char *) malloc(buf_size);
+	memset(buffer, 0, buf_size);
 
 	fillBuffer();
 	cur_rec_pos = 0;
@@ -403,7 +417,7 @@ int RunIterator::fillBuffer() {
 	return 1;
 }
 
-RunIterator::~RunIterator() { /* do nothing */}
+RunIterator::~RunIterator() { free(buffer); }
 
 Record *RunIterator::next() {
 
@@ -431,6 +445,14 @@ Record *RunIterator::next() {
  
 bool RunIterator::has_next() {
 
+	if (cur_rec_pos >= buf_size)
+	{
+		if (fillBuffer() == -1)
+		{
+			return false;
+		}
+		cur_rec_pos = 0;
+	}
 	// check if the next record is empty (only happens in last page of run) ...
 	char* rec_ptr = (char*) buffer + cur_rec_pos;
 	// ... by checking if the first byte is zero
@@ -452,8 +474,8 @@ SchemaReader* RunIterator::getReader() {
 
 void mk_runs(std::string in_fn, std::string out_fn, long run_length, Schema *schema)
 {
-	ExternalSorter sorter(schema, run_length, in_fn, out_fn);
-	sorter.csv2pagefile(in_fn, out_fn);
+//	ExternalSorter sorter(schema, run_length, in_fn, out_fn);
+//	sorter.csv2pagefile(in_fn, out_fn);
 }
 
 void merge_runs(RunIterator* iterators[], int num_runs, std::ofstream *out_fp,
@@ -473,10 +495,10 @@ void merge_runs(RunIterator* iterators[], int num_runs, std::ofstream *out_fp,
 				break;
 			}
 
-			if (compared == 1) { // i > j
-				smaller = rating[i];
-				rating[i] = j;
-				rating[j] = smaller;
+			if (compared == -1) { // i > j
+				smaller = rating[j];
+				rating[j] = rating[i];
+				rating[i] = smaller;
 			}
 		}
 	}
@@ -488,9 +510,9 @@ void merge_runs(RunIterator* iterators[], int num_runs, std::ofstream *out_fp,
 	char *buf_ptr = buf;
 	while (done < num_runs) {
 
-		if (cur_rec_pos < buf_size) {
+		if (cur_rec_pos > buf_size) {
 			// if buf is full, write it out to disk
-			out_fp.write(buf, buf_size);
+			out_fp->write(buf, buf_size);
 			memset(buf, 0, buf_size);
 			cur_rec_pos = 0;
 		}
@@ -514,16 +536,31 @@ void merge_runs(RunIterator* iterators[], int num_runs, std::ofstream *out_fp,
 
 		// re-sort the rating
 		int rating_i = 0;
-		for (j = 0; j < num_runs; i++) {
-			if (i == j || rating[j] == -1) {
-				continue;
+		if (rating[i] == -1)
+		{
+			for (j = 0; j < num_runs; j++)
+			{
+				if (rating[j] != -1)
+				{
+					rating[j]--;
+				}
 			}
+		}
+		else
+		{
+			//TODO: fix this re-sorting
+			rating[i] = 0;
+			for (j = 0; j < num_runs; j++) {
+				if (i == j || rating[j] == -1) {
+					continue;
+				}
 
-			compared = compareRecord(heap[i], heap[j]);
-			if (compared == -1) { // i < j
-				rating[j]++;
-			} else if (compared == 1) { // i > j
-				rating_i++;
+				compared = compareRecord(heap[i], heap[j]);
+				if (compared == -1) { // i < j
+					rating[j]++;
+				} else if (compared == 1) { // i > j
+					rating_i++;
+				}
 			}
 		}
 		rating[i] = rating_i;
@@ -534,22 +571,24 @@ void merge_runs(RunIterator* iterators[], int num_runs, std::ofstream *out_fp,
 }
 
 int main() {
-	SchemaReader reader("schema_example.json");
-	int record_size = reader.getRecordSize();
-
 	std::string in_fn = "data_example.csv";
 	std::string out_fn = "pagefile";
 	std::string pass1_fn = "pass1.pages";
 
-	int num_runs = 4;
-	int buf_size = 3072 / (num_runs + 1);
-	RunIterator** iterators = new RunIterator*[num_runs];
-//	mk_runs(in_fn, out_fn, reader.getSchema());
-
-
-	ExternalSorter sorter("schema_example.json"); //TODO define the constructor
+	// create page file
+	ExternalSorter sorter("schema_example.json");
+	// add sort attributes to schema
+	sorter.addSortingAttributes("cgpa");
 	int record_count = sorter.csv2pagefile(in_fn, out_fn);
 
+
+
+	int num_runs = 4;
+	int buf_size = 125 / (num_runs + 1);
+	sorter.setMemCapacity(125);
+	RunIterator** iterators = new RunIterator*[num_runs];
+
+	int record_size = 25;
 	int run_length = (record_count / num_runs) * record_size;
 	int last_run_length = (record_count % num_runs) * record_size;
 
@@ -562,6 +601,7 @@ int main() {
 
 	std::ofstream out_fp(pass1_fn.c_str(), std::ofstream::binary);
 	char * buf = (char*) malloc(buf_size);
+	memset(buf, 0, buf_size);
 	merge_runs(iterators, num_runs, &out_fp, 0, buf, buf_size);
 
 
