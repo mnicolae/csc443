@@ -1,5 +1,6 @@
 CC = g++
-CCFLAGS = -O3 -Wall -g
+# TODO: add back -03 flag to CCFLAGS
+CCFLAGS = -Wall -g 
 LEVELDB_DIR = ./leveldb-1.15.0
 LEVELDB_OPTS = -I $(LEVELDB_DIR)/include -pthread $(LEVELDB_DIR)/libleveldb.a
 JSONCPP_OPTS = -I .

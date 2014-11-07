@@ -88,8 +88,8 @@ int main(int argc, const char* argv[]) {
      }
 
      // construct the record
-     memcpy(record.data, buf, offset_counter);
-     memcpy(record.schema, schema, sizeof(schema));
+     record.data = (char *) buf;
+     record.schema = schema;
      
      memcpy(unique_key, &record, record_size);
      memcpy(unique_key + record_size, &unique_counter, sizeof(long));
@@ -104,7 +104,7 @@ int main(int argc, const char* argv[]) {
   printf("\nTIME: %ld miliseconds\n", end_time - start_time);
 
   csvStream.close();
-  delete db;
+//  delete db;
 
   return 0;
 }
