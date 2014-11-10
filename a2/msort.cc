@@ -37,31 +37,31 @@ int main(int argc, const char* argv[]) {
 	ExternalSorter sorter(&reader, mem_capacity);
 	sorter.addSortingAttributes(sortingAttrs);
 
-
-	// make runs
-	int record_count = sorter.csv2pagefile(csv_fn, tmp_file_name[cur_idx]);
-
-  	// Do the merge
-	int record_size = reader.getRecordSize();
-	
-
 	// initialize the run_length vector
 	std::vector<long> run_lengths[2];
-	int run_len = mem_capacity;
-	int residual = record_size * record_count;
 
-	RunIterator** iterators;
-	int groups = ceil((record_count*record_size) / (mem_capacity * k));
-	for (int i = 0; i < groups; i++) {
-		for (int j = 0; j < k; j++) {
-			if (residual > run_len) {
-				run_lengths[cur_idx].push_back(run_len);
-				residual -= run_len;
-			} else {
-				run_lengths[cur_idx].push_back(residual);
-			}
-		}
-	}
+	// make runs
+	int record_count = sorter.csv2pagefile(csv_fn, tmp_file_name[cur_idx], &run_lengths[cur_idx]);
+
+  	// Do the merge
+	// int record_size = reader.getRecordSize();
+	
+
+	// int run_len = mem_capacity;
+	// int residual = record_size * record_count;
+
+	
+	// int groups = ceil((record_count*record_size*1.0) / mem_capacity);
+	// for (int i = 0; i < groups; i++) {
+	// 	for (int j = 0; j < k; j++) {
+	// 		if (residual > run_len) {
+	// 			run_lengths[cur_idx].push_back(run_len);
+	// 			residual -= run_len;
+	// 		} else {
+	// 			run_lengths[cur_idx].push_back(residual);
+	// 		}
+	// 	}
+	// }
 
 	////////////////////////////////////////////////////////////
 	//
@@ -71,6 +71,9 @@ int main(int argc, const char* argv[]) {
 
 	long buffer_size = mem_capacity / (k+1);
 	long start_pos;
+	long run_len;
+	RunIterator** iterators;
+	
 	while (run_lengths[cur_idx].size() > 1) { // Note: don't change this to total_num_runs
 
 		// open the temp files: open cur_idx in read mode and (1 - cur_idx) in write mode

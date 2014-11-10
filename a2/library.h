@@ -85,7 +85,7 @@ public:
 	~ExternalSorter();
 	void setMemCapacity(int cap);
 	void addSortingAttributes(std::string attrList);
-	int csv2pagefile(std::string csv_file, std::string page_file);
+	int csv2pagefile(std::string csv_file, std::string page_file, std::vector<long> *runs);
 	SchemaReader* getSchemaReader();
 };
 

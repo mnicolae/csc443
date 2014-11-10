@@ -347,7 +347,7 @@ int compareRecord(const void* r1, const void* r2) {
 }
 
 
-int ExternalSorter::csv2pagefile(std::string csv_file, std::string page_file) {
+int ExternalSorter::csv2pagefile(std::string csv_file, std::string page_file, std::vector<long> *runs) {
 	std::ifstream infile(csv_file.c_str(), std::ifstream::binary);
 	std::ofstream outfile(page_file.c_str(), std::ofstream::binary);
 
@@ -397,6 +397,9 @@ int ExternalSorter::csv2pagefile(std::string csv_file, std::string page_file) {
 		// write it out to disk
 		outfile.write((char*)mem, buffer_size);
 
+		// add the run to runs
+		runs->push_back(buffer_size);
+
 		// reset states
 		record_pointer = (char*) mem;
 		memset(mem, 0, mem_capacity);		
@@ -414,6 +417,9 @@ int ExternalSorter::csv2pagefile(std::string csv_file, std::string page_file) {
 
 	// write the last page to disk
 	outfile.write((char*)mem, buffer_size);
+
+	// add the run to runs
+	runs->push_back(buffer_size);
 
 	// close files
 	outfile.close();
