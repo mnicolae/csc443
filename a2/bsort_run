@@ -14,7 +14,9 @@ LEVELDB_DIR="/media/DAMONM/leveldb_dir"
 SORT_ATTRS="cgpa"
 
 for file in $( ls $INPUT_FILES); do
-	ls -lah $file
+	# ls -lah $file
+	# wc -l $file
+	echo "Running bsort on $file"
 
 	for j in `seq 1 3`; do
 		echo "Run $j"
