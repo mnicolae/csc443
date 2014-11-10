@@ -67,28 +67,22 @@ int compareRecord(const void* rec1, const void* rec2); // for use by qsort()
 class ExternalSorter {
 private:
 	SchemaReader* reader;
-	std::ifstream csv_file;
-	std::ofstream page_file;
+	std::fstream csv_file;
+	std::fstream page_file;
 	int mem_capacity;
 	void* mem;
 	int record_size;
 
 public:
-	ExternalSorter(SchemaReader* rdr, int mem_cap, std::string csv_fn,
-			std::string page_fn);
+	ExternalSorter(SchemaReader* rdr, int mem_cap);
 	ExternalSorter(std::string schema_filename);
 	~ExternalSorter();
 	void setMemCapacity(int cap);
 	void addSortingAttributes(std::string attrList);
-	int csv2pagefile(std::string csv_filename, std::string pagefilename);
+	int csv2pagefile(std::fstream csv_file, std::fstream page_file);
 	SchemaReader* getSchemaReader();
 };
 
-/**
- * Creates sorted runs of length `run_length` in
- * the `out_fp`.
- */
-void mk_runs(FILE *in_fp, FILE *out_fp, long run_length, Schema *schema);
 
 /**
  * The iterator helps you scan through a run.
@@ -96,7 +90,7 @@ void mk_runs(FILE *in_fp, FILE *out_fp, long run_length, Schema *schema);
  */
 class RunIterator {
 private:
-	std::ifstream *fp;
+	std::fstream *fp;
 	long cur_pos; // current position in page file
 	long start_pos;
 	long run_length;
@@ -116,7 +110,7 @@ public:
 	 * with length `run_length`.
 	 */
 
-	RunIterator(std::ifstream *pagefile, long start_pos, long run_length,
+	RunIterator(std::fstream *pagefile, long start_pos, long run_length,
 			long buf_size, SchemaReader *sr);
 
 	/**
@@ -139,12 +133,19 @@ public:
 };
 
 /**
+ * Creates sorted runs of length `run_length` in
+ * the `out_fp`.
+ */
+int mk_runs(char* csv_fn, std::fstream *out_file, long run_length, SchemaReader *reader);
+
+
+/**
  * Merge runs given by the `iterators`.
  * The number of `iterators` should be equal to the `num_runs`.
  * Write the merged runs to `out_fp` starting at position `start_pos`.
  * Cannot use more than `buf_size` of heap memory allocated to `buf`.
  */
-void merge_runs(RunIterator* iterators[], int num_runs, std::ofstream *out_fp,
+int merge_runs(RunIterator* iterators[], int num_runs, std::fstream *out_fp,
 		long start_pos, char *buf, long buf_size);
 
 int compare_records(const void *rec1, const void *rec2);

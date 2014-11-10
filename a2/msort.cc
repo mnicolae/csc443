@@ -8,6 +8,7 @@
 
 #include <string.h>
 #include <time.h>
+#include <math.h>
 #include <sys/timeb.h>
 
 using namespace std;
@@ -21,43 +22,90 @@ int main(int argc, const char* argv[]) {
     cout << "Please enter <schema_file> <input_file> <output_file> <mem_capacity> <k> <sorting_attributes>" << endl;
     exit(1);
   }
-  string schema_file(argv[1]);
-  //string input_file(argv[2]);
-  //string output_file(argv[3]);
-  //int mem_capacity(argv[4]);
-  //int k(argv[5]);
-  //string sorting_attributes[];
 
-  // Parse the schema JSON file
-  Json::Value schema;
-  Json::Reader json_reader;
-  // Support for std::string argument is added in C++11
-  // so you don't have to use .c_str() if you are on that.
-  ifstream schema_file_istream(schema_file.c_str(), ifstream::binary);
-  bool successful = json_reader.parse(schema_file_istream, schema, false);
-  if (!successful) {
-    cout << "ERROR: " << json_reader.getFormatedErrorMessages() << endl;
-    exit(1);
+
+  int mem_capacity = atoi(argv[4]);
+  char* schema_fn = (char*) argv[1];
+  char* sortingAttrs = (char*) argv[6];
+  int k = atoi(argv[5]);
+  char* csv_fn = (char*) argv[2];
+//  char* out_fn =(char*) argv[3];
+
+
+  SchemaReader reader(schema_fn);
+  ExternalSorter sorter(&reader, mem_capacity);
+  sorter.addSortingAttributes(sortingAttrs);
+
+  // Open csv file
+  std::fstream csv_file;
+  csv_file.open(csv_fn, std::fstream::in | std::fstream::binary);
+
+  // open temp files to write intermediate results
+  std::fstream *tmp_file = new std::fstream[2];
+  for (int i=0; i < 2; i++) {
+	  char fn[5];
+	  sprintf(fn, "%d.tmp", i);
+	  tmp_file[i].open(fn, std::fstream::out | std::fstream::in | std::fstream::binary);
   }
 
-  // Print out the schema
-  string attr_name;
-  int attr_len;
-  for (int i = 0; i < schema.size(); ++i) {
-    attr_name = schema[i].get("name", "UTF-8" ).asString();
-    attr_len = schema[i].get("length", "UTF-8").asInt();
-    cout << "{name : " << attr_name << ", length : " << attr_len << "}" << endl;
-
-    //memcpy(my_attribute.name, attr_name.c_str(), attr_name.length() + 1); 
-  }
-  
-  // TODO: Parse the input CSV file
+  // make runs
+  int cur_idx = 0;
+  int record_count = sorter.csv2pagefile(csv_file, tmp_file[cur_idx]);
+  csv_file.close();
 
   ftime(&start);
   start_time = start.time * 1000 + start.millitm; 
 
-  // Do the sort
-  // Your implementation
+
+  // Do the merge
+  int record_size = reader.getRecordSize();
+  int groups = ceil((record_count*record_size) / (mem_capacity * k));
+
+  // initialize the run_length vector
+  std::vector<long> run_lengths[2];
+  int run_len = mem_capacity;
+  int residual = record_size * record_count;
+
+  RunIterator** iterators;
+  for (int i = 0; i < groups; i++) {
+	  for (int j = 0; j < k; j++) {
+		  if (residual > run_len) {
+			  run_lengths[cur_idx].push_back(run_len);
+			  residual -= run_len;
+		  } else {
+			  run_lengths[cur_idx].push_back(residual);
+		  }
+	  }
+  }
+
+  long buffer_size = mem_capacity / (k+1);
+  long start_pos;
+
+  run_lengths[1 - cur_idx].clear();
+  for (int i=0; i < groups; i++) {
+
+	  // initialize a group of k iterators
+	  iterators = new RunIterator*[k];
+	  start_pos = 0;
+	  for (int j = 0; j < k; j++) {
+		  iterators[j] = new RunIterator(tmp_file[cur_idx], start_pos, run_lengths[cur_idx][i*k + j], buffer_size, &reader);
+		  start_pos += run_lengths[cur_idx][i*k + j];
+	  }
+
+	  // merge the k iterators
+	  char * buf = (char*) malloc(buffer_size);
+	  memset(buf, 0, buffer_size);
+	  run_len = merge_runs(iterators, k, tmp_file[1 - cur_idx], 0, buf, buffer_size);
+
+	  //push run_len into the next run_lengths array
+	  run_lengths[1 - cur_idx].push_back(run_len);
+
+	  // destroy this group of iterators
+	  for (int j = 0; j < k; j++) {
+		  delete iterators[j];
+	  }
+  }
+
 
   ftime(&end);
   end_time = end.time * 1000 + end.millitm;  
