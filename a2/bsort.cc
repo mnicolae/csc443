@@ -50,7 +50,7 @@ int main(int argc, const char* argv[]) {
   leveldb::Options options;
   options.create_if_missing = true;
   //options.comparator = &cmp;
-  leveldb::Status status = leveldb::DB::Open(options, "./leveldb_dir", &db);
+  leveldb::Status status = leveldb::DB::Open(options, "/media/DAMONM/leveldb_dir", &db); // hard-coded path
 
   SchemaReader reader(schema_file);
   reader.addSortingAttributes(sort_attrs);
@@ -79,10 +79,20 @@ int main(int argc, const char* argv[]) {
       if (ch == '\n') count++;
   } while (ch != EOF);
 	
+  for (int j = 0; j < schema->nattrs; j++)
+  {
+    attr_array[j] = (char *) malloc(schema->attrs[j]->length);
+  }
+
   // parse the records in the csv file
   for (int i = 0; i < count; i++)
   {
      csvStream.getline(line, record_size + schema->nattrs);
+
+     if (strncmp(line, "", record_size + schema->nattrs) == 0)
+     {
+	continue;
+     }
 
      // add the key
      strncpy(line_value, line, record_size + schema->nattrs);
@@ -96,7 +106,7 @@ int main(int argc, const char* argv[]) {
 
      for (int j = 0; j < schema->nattrs; j++)
      {
-       attr_array[j] = (char *) malloc(schema->attrs[j]->length);
+       memset(attr_array[j], 0, schema->attrs[j]->length);
        memcpy(attr_array[j], attr, schema->attrs[j]->length);
        attr = strtok(NULL, delimeter);
      }
@@ -114,6 +124,13 @@ int main(int argc, const char* argv[]) {
      unique_counter++;
 
      db->Put(leveldb::WriteOptions(), leveldb::Slice(unique_key, sizeof(unique_key)), value);
+
+  }
+
+  // free attr_array to avoid memory leaks
+  for (int j = 0; j < schema->nattrs; j++)
+  {
+     free(attr_array[j]);
   }
 
   fp = fopen(out_index, "w+");
@@ -133,6 +150,7 @@ int main(int argc, const char* argv[]) {
   printf("\nTIME: %ld miliseconds\n", end_time - start_time);
 
   fclose(fp);
+  fclose(csvNumLines);
   csvStream.close();
   delete db;
 

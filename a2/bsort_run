@@ -7,18 +7,19 @@
 # cat data_example.log.ac >> data_example.log.ad
 # cat data_example.log.ad >> data_example.log.ae
 
-INPUT_FILES="./data_example.csv.log.*"
+INPUT_FILES="/media/DAMONM/data_example.csv.log.*"
 SCHEMA_FILE="./schema_example2.json"
-OUT_INDEX="./out_index"
+OUT_INDEX="/media/DAMONM/out_index"
+LEVELDB_DIR="/media/DAMONM/leveldb_dir"
 SORT_ATTRS="cgpa"
 
 for file in $( ls $INPUT_FILES); do
-	echo "Running bsort with file $file"
+	wc -l $file
 
 	for j in `seq 1 3`; do
 		echo "Run $j"
-		./bsort $SCHEMA_FILE ./$file $OUT_INDEX $SORT_ATTRS
-		rm -rf leveldb_dir
-		rm -f out_index
+		./bsort $SCHEMA_FILE $file $OUT_INDEX $SORT_ATTRS
+		rm -rf $LEVELDB_DIR
+		rm -rf $OUT_INDEX
 	done
 done
