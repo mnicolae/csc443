@@ -13,7 +13,7 @@ library.o: library.cc library.h
 jsoncpp.o: jsoncpp.cpp json/json.h
 	$(CC) -o $@ -c $< $(CCFLAGS) $(JSONCPP_OPTS)
 
-msort: msort.cc library.o jsoncpp.o
+msort: msort.cc library.o jsoncpp.o 
 	$(CC) -o $@ $^ $(CCFLAGS)
 
 bsort: bsort.cc jsoncpp.o library.o

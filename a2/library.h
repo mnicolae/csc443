@@ -79,7 +79,7 @@ public:
 	~ExternalSorter();
 	void setMemCapacity(int cap);
 	void addSortingAttributes(std::string attrList);
-	int csv2pagefile(std::fstream csv_file, std::fstream page_file);
+	int csv2pagefile(std::string csv_file, std::fstream * page_file);
 	SchemaReader* getSchemaReader();
 };
 
@@ -90,7 +90,7 @@ public:
  */
 class RunIterator {
 private:
-	std::fstream *fp;
+	std::fstream * fp;
 	long cur_pos; // current position in page file
 	long start_pos;
 	long run_length;
@@ -110,7 +110,7 @@ public:
 	 * with length `run_length`.
 	 */
 
-	RunIterator(std::fstream *pagefile, long start_pos, long run_length,
+	RunIterator(std::fstream * pagefile, long start_pos, long run_length,
 			long buf_size, SchemaReader *sr);
 
 	/**
@@ -136,7 +136,7 @@ public:
  * Creates sorted runs of length `run_length` in
  * the `out_fp`.
  */
-int mk_runs(char* csv_fn, std::fstream *out_file, long run_length, SchemaReader *reader);
+int mk_runs(char* csv_fn, std::fstream out_file, long run_length, SchemaReader *reader);
 
 
 /**

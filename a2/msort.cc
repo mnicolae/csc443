@@ -29,6 +29,8 @@ int main(int argc, const char* argv[]) {
   char* sortingAttrs = (char*) argv[6];
   int k = atoi(argv[5]);
   char* csv_fn = (char*) argv[2];
+  std::string tmp_file_0 = "tmp_file_1";
+  std::string tmp_file_1 = "tmp_file_2";
 //  char* out_fn =(char*) argv[3];
 
 
@@ -37,21 +39,23 @@ int main(int argc, const char* argv[]) {
   sorter.addSortingAttributes(sortingAttrs);
 
   // Open csv file
-  std::fstream csv_file;
-  csv_file.open(csv_fn, std::fstream::in | std::fstream::binary);
+  //std::fstream csv_file;
+  //csv_file.open(csv_fn, std::fstream::in | std::fstream::binary);
 
   // open temp files to write intermediate results
   std::fstream *tmp_file = new std::fstream[2];
   for (int i=0; i < 2; i++) {
-	  char fn[5];
-	  sprintf(fn, "%d.tmp", i);
-	  tmp_file[i].open(fn, std::fstream::out | std::fstream::in | std::fstream::binary);
+          char fn[5];
+          sprintf(fn, "%d.tmp", i);
+          tmp_file[i].open(fn, std::fstream::out | std::fstream::in | std::fstream::binary);
   }
 
   // make runs
   int cur_idx = 0;
-  int record_count = sorter.csv2pagefile(csv_file, tmp_file[cur_idx]);
-  csv_file.close();
+  //int record_count = sorter.csv2pagefile(csv_file, tmp_file[cur_idx]);
+  int record_count = sorter.csv2pagefile(csv_fn, &tmp_file[cur_idx]);
+  //csv_file.close();
+
 
   ftime(&start);
   start_time = start.time * 1000 + start.millitm; 
@@ -88,14 +92,14 @@ int main(int argc, const char* argv[]) {
 	  iterators = new RunIterator*[k];
 	  start_pos = 0;
 	  for (int j = 0; j < k; j++) {
-		  iterators[j] = new RunIterator(tmp_file[cur_idx], start_pos, run_lengths[cur_idx][i*k + j], buffer_size, &reader);
+		  iterators[j] = new RunIterator(&tmp_file[cur_idx], start_pos, run_lengths[cur_idx][i*k + j], buffer_size, &reader);
 		  start_pos += run_lengths[cur_idx][i*k + j];
 	  }
 
 	  // merge the k iterators
 	  char * buf = (char*) malloc(buffer_size);
 	  memset(buf, 0, buffer_size);
-	  run_len = merge_runs(iterators, k, tmp_file[1 - cur_idx], 0, buf, buffer_size);
+	  run_len = merge_runs(iterators, k, &tmp_file[1 - cur_idx], 0, buf, buffer_size);
 
 	  //push run_len into the next run_lengths array
 	  run_lengths[1 - cur_idx].push_back(run_len);

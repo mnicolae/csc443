@@ -345,8 +345,9 @@ int compareRecord(const void* r1, const void* r2) {
 //	return 0;
 }
 
-int ExternalSorter::csv2pagefile(std::fstream infile, std::fstream outfile) {
-//  std::ifstream infile(csv_file.c_str(), std::ifstream::binary);
+//int ExternalSorter::csv2pagefile(std::fstream infile, std::fstream outfile) {
+int ExternalSorter::csv2pagefile(std::string csv_file, std::fstream * outfile) {
+  std::ifstream infile(csv_file.c_str(), std::ifstream::binary);
 //  std::ofstream outfile(page_file.c_str(), std::ofstream::binary);
 
 	if (!infile.is_open()) {
@@ -393,7 +394,7 @@ int ExternalSorter::csv2pagefile(std::fstream infile, std::fstream outfile) {
 		qsort(mem, record_count, record_size, myCompareRecords);
 
 		// write it out to disk
-		outfile.write((char*)mem, buffer_size);
+		outfile->write((char*)mem, buffer_size);
 
 		// reset states
 		record_pointer = (char*) mem;
@@ -411,10 +412,10 @@ int ExternalSorter::csv2pagefile(std::fstream infile, std::fstream outfile) {
 	qsort(mem, record_count, record_size, myCompareRecords);
 
 	// write the last page to disk
-	outfile.write((char*)mem, buffer_size);
+	outfile->write((char*)mem, buffer_size);
 
 	// close files
-	outfile.close();
+	outfile->close();
 //	infile.close();
 
 	return total_record_count;
@@ -428,7 +429,7 @@ int ExternalSorter::csv2pagefile(std::fstream infile, std::fstream outfile) {
 ////////////////////////////////////////////////////////////
 
 
-RunIterator::RunIterator(std::fstream *pagefile, long sp, long rl, long bs, SchemaReader *sr){
+RunIterator::RunIterator(std::fstream * pagefile, long sp, long rl, long bs, SchemaReader *sr){
 	fp = pagefile;
 	start_pos = sp;
 	run_length = rl;
@@ -536,18 +537,17 @@ int merge_runs(RunIterator* iterators[], int num_runs, std::fstream *out_fp,
 	int rating[num_runs];
 	int reverse_rating[num_runs];
 	int compared, smaller;
-	int total_length = 0;
+        int total_length = 0;
 	int record_size = iterators[0]->getReader()->getRecordSize();
 
 	for (i = 0; i < num_runs; i++) {
 		heap.push_back(iterators[i]->next()->data);
-		total_length += record_size;
 		rating[i] = i;
-		// sort the records
 		for (j = i - 1; j >= 0; j--) {
 			compared = compareRecord(heap[i], heap[j]);
+			total_length += record_size;
 			if (compared == 0) {
-				rating[i] = rating[j];
+				rating[j] = rating[i];
 				break;
 			}
 
@@ -557,7 +557,6 @@ int merge_runs(RunIterator* iterators[], int num_runs, std::fstream *out_fp,
 				rating[i] = smaller;
 			}
 		}
-		std::cout << rating[0] << "\t" << rating[1] << "\t" << rating[2] << "\t" << rating[3] << "\n";
 	}
 
 	int done = 0;
@@ -569,7 +568,7 @@ int merge_runs(RunIterator* iterators[], int num_runs, std::fstream *out_fp,
 
 	while (done < num_runs) {
 
-		if (cur_rec_pos > buf_size) {
+		if (cur_rec_pos >= buf_size) {
 			// if buf is full, write it out to disk
 			out_fp->write(buf, buf_size);
 			memset(buf, 0, buf_size);
@@ -578,7 +577,10 @@ int merge_runs(RunIterator* iterators[], int num_runs, std::fstream *out_fp,
 
 		// find where the smallest record, i.e. the one with rating = 0
 		for (i = 0; i < num_runs && rating[i] != 0; i++) {}
-		std::cout << rating[0] << "\t" << rating[1] << "\t" << rating[2] << "\t" << rating[3] << "\n";
+		
+		//TODO: what if there is no 0
+		std::cout << rating[0] << " " << rating[1] << " " << rating[2] << " "<< rating[3] << "\n";
+
 
 		// put it into buf
 		buf_ptr = buf + cur_rec_pos;
@@ -587,7 +589,11 @@ int merge_runs(RunIterator* iterators[], int num_runs, std::fstream *out_fp,
 
 		// replace smallest one with next record of the runIterator where it comes from
 		if (iterators[i]->has_next()) {
+			total_length += record_size;
 			memcpy(heap[i], iterators[i]->next()->data, record_size);
+			//std::cout << "heap[i] " << heap[i] << "\n"; 
+			//std::cout << "heap[i] " << heap[i] << "\n"; 
+
 		} else {
 			// if one iterator is empty, increase done by 1
 			rating[i] = -1;
@@ -603,40 +609,27 @@ int merge_runs(RunIterator* iterators[], int num_runs, std::fstream *out_fp,
 
 		}
 
-		// First calculate reverse-rating
+		// re-sort the ratings. First calculate reverse-rating
 		for (j = 0; j < num_runs; j++) {
 			reverse_rating[j] = -1;
 			if (rating[j] > -1)
 				reverse_rating[rating[j]] = j;
 		}
 
-		// re-sort the rating
-		int rating_i = 0;
-		if (rating[i] == -1)
-		{
-			for (j = 0; j < num_runs; j++)
-			{
-				if (rating[j] != -1)
-				{
-					rating[j]--;
-				}
+		// fix this re-sorting
+		rating[i] = 0;
+		for (j = 0; j < num_runs; j++) {
+			if (reverse_rating[j] == -1 || reverse_rating[j] == i) {
+				continue;
 			}
-		}
-		else
-		{
-			//TODO: fix this re-sorting
-			rating[i] = 0;
-			for (j = 0; j < num_runs; j++) {
-				if (i == j || rating[j] == -1) {
-					continue;
-				}
-
-				compared = compareRecord(heap[i], heap[j]);
-				if (compared == -1) { // i < j
-					rating[j]++;
-				} else if (compared == 1) { // i > j
-					rating_i++;
-				}
+			// compare heap[i] with the next smallest
+			compared = compareRecord(heap[i], heap[reverse_rating[j]]);
+			if (compared == -1 || compared == 0) { // i <= j
+				continue;
+			} else if (compared == 1) { // i > j
+				// swap rating
+				rating[i] = j;
+				rating[reverse_rating[j]] = rating[i];
 			}
 		}
 	} // end while
