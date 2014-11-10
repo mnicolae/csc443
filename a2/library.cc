@@ -220,133 +220,133 @@ void ExternalSorter::addSortingAttributes(std::string attrList) {
 }
 
 int compareRecord(const void* r1, const void* r2) {
-	 int i, j, offset, length, type;
-	void * buff1, *buff2;
+	int i, j, offset, length, type;
+	char *data1, *data2, *buff1, *buff2;
+	int i1, i2, result;
+	float f1, f2;
+
 	for (i = 0; i < SCHEMA->n_sort_attrs; i++) {
+
+		// calculate offset of this sorting attribute
 		offset = 0;
 		for (j = 0; j < SCHEMA->sort_attrs[i]; j++) {
 			offset += SCHEMA->attrs[j]->length;
-		} //TODO; fix sorting on second attribute
+	    }
+
+	    // fetch the attribute
+	    data1 = (char *) r1 + offset;
+	    data2 = (char *) r2 + offset;
+
+	    length = 1 + SCHEMA->attrs[i]->length;
+	    buff1 = (char *) malloc(length);
+	    buff2 = (char *) malloc(length);
+	    memset(buff1, 0, length);
+	    memset(buff2, 0, length);
+
+	    memcpy(buff1, data1, length);
+	    memcpy(buff2, data2, length);
+
+	    // compare records on this attribute
 		type = SCHEMA->attrs[i]->type;
-		if (type == STRING) {
-			length = SCHEMA->attrs[i]->length;
-		} else if (type == INTEGER) {
-			length = sizeof(int);
-		} else if (type == FLOAT) {
-			length = sizeof(float);
-		}
-		buff1 = malloc(length);
-		memset(buff1, 0, length);
-		buff2 = malloc(length);
-		memset(buff2, 0, length);
-		char * data1 = (char *) r1 + offset;
-		char * data2 = (char *) r2 + offset;
-		memcpy(buff1, data1, length);
-		memcpy(buff2, data2, length);
-		if (type == INTEGER) {
-			if ((*(int *) data1) > (*(int *) data2)) {
-				free(buff1);
-				free(buff2);
-				return 1;
-			} else if ((*(int *) data1) < (*(int *) data2)) {
-				free(buff1);
-				free(buff2);
-				return -1;
-			}
-		}
-		if (type == FLOAT) {
-			if ((*(float *) data1) > (*(float *) data2)) {
-				free(buff1);
-				free(buff2);
-				return 1;
-			} else if ((*(float *) data1) < (*(float *) data2)) {
-				free(buff1);
-				free(buff2);
-				return -1;
-			}
-		}
-		if (type == STRING) {
-			int rc = strncmp(data1, data2, length);
-			if (rc > 0) {
-				free(buff1);
-				free(buff2);
-				return 1;
-			} else if (rc < 0) {
-				free(buff1);
-				free(buff2);
-				return -1;
-			}
-		}
-		free(buff1);
-		free(buff2);
-	}
+	    switch (type) {
+	    	case INTEGER:
+	    	i1 = atoi(buff1);
+	    	i2 = atoi(buff2);
+	    	free(buff1);
+	    	free(buff2);
+	    	if (i1 == i2) {
+	    		continue;
+	    	}
+	    	return (i1 > i2)? 1 : -1;
+
+	    	case FLOAT:
+	    	f1 = atof(buff1);
+	    	f2 = atof(buff2);
+	    	free(buff1);
+	    	free(buff2);
+	    	if (f1 == f2) {
+	    		continue;
+	    	}
+	    	return (f1 > f2)? 1 : -1;
+
+	    	case STRING:
+	    	result = strncmp(buff1, buff2, length);
+	    	free(buff1);
+	    	free(buff2);
+	    	if (result == 0) {
+	    		continue;
+	    	}
+	    	return (result > 0)? 1 : -1;
+   	} // end switch
+
+	} // end for
+
 	return 0;
 
-//	int i, j, offset, length, type;
-//	char *data1, *data2, *buff1, *buff2;
-//	int i1, i2, result;
-//	float f1, f2;
-//
-//	for (i = 0; i < SCHEMA->n_sort_attrs; i++) {
-//
-//		// calculate offset of this sorting attribute
-//		offset = 0;
-//		for (j = 0; j < SCHEMA->sort_attrs[i]; j++) {
-//			offset += SCHEMA->attrs[j]->length;
-//	    }
-//
-//	    // fetch the attribute
-//	    data1 = (char *) r1 + offset;
-//	    data2 = (char *) r2 + offset;
-//
-//	    length = 1 + SCHEMA->attrs[i]->length;
-//	    buff1 = (char *) malloc(length);
-//	    buff2 = (char *) malloc(length);
-//	    memset(buff1, 0, length);
-//	    memset(buff2, 0, length);
-//
-//	    memcpy(buff1, data1, length);
-//	    memcpy(buff2, data2, length);
-//
-//	    // compare records on this attribute
-//		type = SCHEMA->attrs[i]->type;
-//	    switch (type) {
-//	    	case INTEGER:
-//	    	i1 = atoi(buff1);
-//	    	i2 = atoi(buff2);
-//	    	free(buff1);
-//	    	free(buff2);
-//	    	if (i1 == i2) {
-//	    		continue;
-//	    	}
-//	    	return (i1 > i2)? 1 : -1;
-//
-//	    	case FLOAT:
-//	    	f1 = atof(buff1);
-//	    	f2 = atof(buff2);
-//	    	free(buff1);
-//	    	free(buff2);
-//	    	if (f1 == f2) {
-//	    		continue;
-//	    	}
-//	    	return (f1 > f2)? 1 : -1;
-//
-//	    	case STRING:
-//	    	result = strncmp(buff1, buff2, length);
-//	    	free(buff1);
-//	    	free(buff2);
-//	    	if (result == 0) {
-//	    		continue;
-//	    	}
-//	    	return (result > 0)? 1 : -1;
-//    	} // end switch
-//
-//	} // end for
-//
-//	return 0;
+	//  int i, j, offset, length, type;
+	// void * buff1, *buff2;
+	// for (i = 0; i < SCHEMA->n_sort_attrs; i++) {
+	// 	offset = 0;
+	// 	for (j = 0; j < SCHEMA->sort_attrs[i]; j++) {
+	// 		offset += SCHEMA->attrs[j]->length;
+	// 	} //TODO; fix sorting on second attribute
+	// 	type = SCHEMA->attrs[i]->type;
+	// 	if (type == STRING) {
+	// 		length = SCHEMA->attrs[i]->length;
+	// 	} else if (type == INTEGER) {
+	// 		length = sizeof(int);
+	// 	} else if (type == FLOAT) {
+	// 		length = sizeof(float);
+	// 	}
+	// 	buff1 = malloc(length);
+	// 	memset(buff1, 0, length);
+	// 	buff2 = malloc(length);
+	// 	memset(buff2, 0, length);
+	// 	char * data1 = (char *) r1 + offset;
+	// 	char * data2 = (char *) r2 + offset;
+	// 	memcpy(buff1, data1, length);
+	// 	memcpy(buff2, data2, length);
+	// 	if (type == INTEGER) {
+	// 		if ((*(int *) data1) > (*(int *) data2)) {
+	// 			free(buff1);
+	// 			free(buff2);
+	// 			return 1;
+	// 		} else if ((*(int *) data1) < (*(int *) data2)) {
+	// 			free(buff1);
+	// 			free(buff2);
+	// 			return -1;
+	// 		}
+	// 	}
+	// 	if (type == FLOAT) {
+	// 		if ((*(float *) data1) > (*(float *) data2)) {
+	// 			free(buff1);
+	// 			free(buff2);
+	// 			return 1;
+	// 		} else if ((*(float *) data1) < (*(float *) data2)) {
+	// 			free(buff1);
+	// 			free(buff2);
+	// 			return -1;
+	// 		}
+	// 	}
+	// 	if (type == STRING) {
+	// 		int rc = strncmp(data1, data2, length);
+	// 		if (rc > 0) {
+	// 			free(buff1);
+	// 			free(buff2);
+	// 			return 1;
+	// 		} else if (rc < 0) {
+	// 			free(buff1);
+	// 			free(buff2);
+	// 			return -1;
+	// 		}
+	// 	}
+	// 	free(buff1);
+	// 	free(buff2);
+	// }
+	// return 0;
 }
 
-//int ExternalSorter::csv2pagefile(std::fstream infile, std::fstream outfile) {
+
 int ExternalSorter::csv2pagefile(std::string csv_file, std::string page_file) {
 	std::ifstream infile(csv_file.c_str(), std::ifstream::binary);
 	std::ofstream outfile(page_file.c_str(), std::ofstream::binary);

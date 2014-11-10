@@ -21,7 +21,12 @@ int main(int argc, const char* argv[]) {
 	int k = atoi(argv[5]);
 	char* sortingAttrs = (char*) argv[6];
 
+	// initialize temporary files
+	int cur_idx = 0;
 	std::string tmp_file_name[] = {"0.tmp", "1.tmp"};
+ 	std::fstream *tmp_file = new std::fstream[2];
+
+  	
 
 	ftime(&start);
 	start_time = start.time * 1000 + start.millitm;
@@ -32,19 +37,9 @@ int main(int argc, const char* argv[]) {
 	ExternalSorter sorter(&reader, mem_capacity);
 	sorter.addSortingAttributes(sortingAttrs);
 
-	int cur_idx = 0;
-  	// open temp files to write intermediate results
-	std::fstream *tmp_file = new std::fstream[2];
-	for (int i=0; i < 2; i++) {
-		tmp_file[i].open(tmp_file_name[cur_idx], std::fstream::out | std::fstream::in | std::fstream::binary);
-	}
 
-
-
-  	// make runs
-  	
-  	// int record_count = sorter.csv2pagefile(csv_fn, &tmp_file[cur_idx]); 
-	int record_count = sorter.csv2pagefile(csv_fn, tmp_file_name[cur_idx]); // TODO: change to "0.tmp"); move open temp files block into loop
+	// make runs
+	int record_count = sorter.csv2pagefile(csv_fn, tmp_file_name[cur_idx]);
 
   	// Do the merge
 	int record_size = reader.getRecordSize();
@@ -68,43 +63,71 @@ int main(int argc, const char* argv[]) {
 		}
 	}
 
-	// main merge loop 
+	////////////////////////////////////////////////////////////
+	//
+	//    Main merge loop 
+	//
+	////////////////////////////////////////////////////////////
+
 	long buffer_size = mem_capacity / (k+1);
 	long start_pos;
-	while (run_lengths[cur_idx].size() > 1) {
+	while (run_lengths[cur_idx].size() > 1) { // Note: don't change this to total_num_runs
 
+		// open the temp files: open cur_idx in read mode and (1 - cur_idx) in write mode
+		tmp_file[cur_idx].open(tmp_file_name[cur_idx].c_str(), std::fstream::in | std::fstream::binary);
+		tmp_file[1 - cur_idx].open(tmp_file_name[1 - cur_idx].c_str(), std::fstream::out | std::fstream::binary);		
 
+		
 		run_lengths[1 - cur_idx].clear();
-		for (int i=0; i < groups; i++) {
 
-		  // initialize a group of k iterators
+
+		// call merge_runs multiple times to merge all runs in this pass
+		int num_runs = 0;
+		int total_num_runs = run_lengths[cur_idx].size();
+		for (int i=0; i < total_num_runs; i += k) { 
+
+		  	// initialize a group of _at most_ k iterators
 			iterators = new RunIterator*[k];
 			start_pos = 0;
+
 			for (int j = 0; j < k; j++) {
-				iterators[j] = new RunIterator(&tmp_file[cur_idx], start_pos, run_lengths[cur_idx][i*k + j], buffer_size, &reader);
-				start_pos += run_lengths[cur_idx][i*k + j];
+				if (i + j < total_num_runs ) {
+					iterators[j] = new RunIterator(&tmp_file[cur_idx], start_pos, run_lengths[cur_idx][i + j], buffer_size, &reader);
+					start_pos += run_lengths[cur_idx][i + j];
+					num_runs ++;
+				}
 			}
 
-		  // merge the k iterators
-			char * buf = (char*) malloc(buffer_size);
-			memset(buf, 0, buffer_size);
-			run_len = merge_runs(iterators, k, &tmp_file[1 - cur_idx], 0, buf, buffer_size);
+		  	// merge the k iterators
+			char * buffer = (char*) malloc(buffer_size);
+			memset(buffer, 0, buffer_size);
+			run_len = merge_runs(iterators, num_runs, &tmp_file[1 - cur_idx], 0, buffer, buffer_size);
 
-		  //push run_len into the next run_lengths array
+		  	//push run_len into the next run_lengths array
 			run_lengths[1 - cur_idx].push_back(run_len);
 
-		  // destroy this group of iterators
+		  	// destroy this group of iterators
 			for (int j = 0; j < k; j++) {
 				delete iterators[j];
 			}
+
+			// delete the buffer
+			free(buffer);
 		}
 
-	  // close the files
+	  	// close the files
+		tmp_file[cur_idx].close();
+		tmp_file[1 - cur_idx].close();
 
-	  // switch the index
+	 	// switch the index
 		cur_idx = 1 - cur_idx;
 	}
 
+	////////////////////////////////////////////////////////////
+	//
+	//    End of main merge loop 
+	//
+	////////////////////////////////////////////////////////////
 
 
 	ftime(&end);
