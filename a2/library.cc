@@ -95,9 +95,10 @@ void SchemaReader::addSortingAttributes(std::string csvAttrList) {
 		if (attr.length() == 0) {
 			continue;
 		}
-		count ++; 
+
 		for(i=0; i < schema->nattrs; i++) {
 			if (schema->attrs[i]->name == attr) {
+				count++;
 				sort_indices.push_back(i);
 			}
 		}		
@@ -346,13 +347,13 @@ int compareRecord(const void* r1, const void* r2) {
 }
 
 //int ExternalSorter::csv2pagefile(std::fstream infile, std::fstream outfile) {
-int ExternalSorter::csv2pagefile(std::string csv_file, std::fstream * outfile) {
-  std::ifstream infile(csv_file.c_str(), std::ifstream::binary);
-//  std::ofstream outfile(page_file.c_str(), std::ofstream::binary);
+int ExternalSorter::csv2pagefile(std::string csv_file, std::string page_file) {
+	std::ifstream infile(csv_file.c_str(), std::ifstream::binary);
+	std::ofstream outfile(page_file.c_str(), std::ofstream::binary);
 
 	if (!infile.is_open()) {
-	  std::cout << "unable to open csv file";
-	  return 0;
+		std::cout << "unable to open csv file";
+		return 0;
 	}
 
 	// initialize the buffer
@@ -367,8 +368,8 @@ int ExternalSorter::csv2pagefile(std::string csv_file, std::fstream * outfile) {
 	std::string line;
 
 	// initialize pointer to compareRecord function
-    int (*myCompareRecords)(const void *, const void *);
-    myCompareRecords = &compareRecord;
+	int (*myCompareRecords)(const void *, const void *);
+	myCompareRecords = &compareRecord;
 
 
 	while (infile.good()) {
@@ -381,20 +382,20 @@ int ExternalSorter::csv2pagefile(std::string csv_file, std::fstream * outfile) {
 		/* if buffer is not full */
 		if (record_count < buffer_capacity) {
 		  // serialize and put the record in the buffer
-		  reader->serialize(line, record_pointer);
+			reader->serialize(line, record_pointer);
 
 		  // update states for next iteration
-		  record_pointer += record_size;
-		  total_record_count++;
-		  record_count++;
-		  continue;
+			record_pointer += record_size;
+			total_record_count++;
+			record_count++;
+			continue;
 		} 
 
 		/* if buffer is full */ 
 		qsort(mem, record_count, record_size, myCompareRecords);
 
 		// write it out to disk
-		outfile->write((char*)mem, buffer_size);
+		outfile.write((char*)mem, buffer_size);
 
 		// reset states
 		record_pointer = (char*) mem;
@@ -412,11 +413,11 @@ int ExternalSorter::csv2pagefile(std::string csv_file, std::fstream * outfile) {
 	qsort(mem, record_count, record_size, myCompareRecords);
 
 	// write the last page to disk
-	outfile->write((char*)mem, buffer_size);
+	outfile.write((char*)mem, buffer_size);
 
 	// close files
-	outfile->close();
-//	infile.close();
+	outfile.close();
+	infile.close();
 
 	return total_record_count;
 }

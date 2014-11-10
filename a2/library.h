@@ -1,10 +1,16 @@
 #include <cstdio>
 #include <stdlib.h>     /* qsort */
+#include <cstdio>
+#include <cstdlib>
 #include <iostream> 
 #include <fstream>
-#include "json/json.h"
-#include <cstring>
 #include <sstream>
+#include <cstring>
+#include <time.h>
+#include <math.h>
+#include <sys/timeb.h>
+
+#include "json/json.h"
 
 enum Types {
 	INTEGER = 0, STRING = 1, FLOAT = 2
@@ -79,7 +85,8 @@ public:
 	~ExternalSorter();
 	void setMemCapacity(int cap);
 	void addSortingAttributes(std::string attrList);
-	int csv2pagefile(std::string csv_file, std::fstream * page_file);
+	// int csv2pagefile(std::string csv_file, std::fstream * page_file);
+	int csv2pagefile(std::string csv_file, std::string page_file);
 	SchemaReader* getSchemaReader();
 };
 

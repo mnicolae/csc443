@@ -22,8 +22,9 @@ letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 numbers = "0123456789"
 def generate_strings(nrecords, len):
     tmp = []
+    strlen = range(len)
     for k in range(nrecords):
-        tmp.append(''.join([random.choice("ABCDEFGHIJKLMNOPQRSTUVWXYZ") for j in range(len)]))
+        tmp.append(''.join([random.choice(letters) for j in strlen]))
     return tmp
 
 '''
@@ -99,24 +100,19 @@ def generate_data(schema, out_file, nrecords):
   pool.join()
 
   # open the temporary column files
-  files = []
-  for attribute in schema:
-    files.append(open(attribute["name"] + ".tmp"))
-
+  files = map(open, map(lambda attr: attr["name"] + '.tmp', schema))
+  
   # re-assemble row from columns
   outfile = open(out_file, "w")
   out = csv.writer(outfile, delimiter=',', quoting=csv.QUOTE_NONE)
   for k in range(nrecords):
-    line = []
-    for f in files:
-      line.append(f.readline().strip())
-    out.writerow(line)
+    out.writerow(map(lambda f: f.readline().strip(), files))
+  outfile.close();
 
   # close files
   for f in files:
     f.close()
     os.remove(f.name);
-  outfile.close();
 
 
 if __name__ == '__main__':
