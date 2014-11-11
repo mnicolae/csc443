@@ -202,7 +202,7 @@ ExternalSorter::ExternalSorter(std::string schema_filename) {
 
 ExternalSorter::~ExternalSorter() {
   free(mem);
-  delete reader;
+  //delete reader;
 }
 
 void ExternalSorter::setMemCapacity(int cap) {
@@ -280,70 +280,69 @@ int compareRecord(const void* r1, const void* r2) {
    	} // end switch
 
 	} // end for
-
 	return 0;
 
-	//  int i, j, offset, length, type;
-	// void * buff1, *buff2;
-	// for (i = 0; i < SCHEMA->n_sort_attrs; i++) {
-	// 	offset = 0;
-	// 	for (j = 0; j < SCHEMA->sort_attrs[i]; j++) {
-	// 		offset += SCHEMA->attrs[j]->length;
-	// 	} //TODO; fix sorting on second attribute
-	// 	type = SCHEMA->attrs[i]->type;
-	// 	if (type == STRING) {
-	// 		length = SCHEMA->attrs[i]->length;
-	// 	} else if (type == INTEGER) {
-	// 		length = sizeof(int);
-	// 	} else if (type == FLOAT) {
-	// 		length = sizeof(float);
-	// 	}
-	// 	buff1 = malloc(length);
-	// 	memset(buff1, 0, length);
-	// 	buff2 = malloc(length);
-	// 	memset(buff2, 0, length);
-	// 	char * data1 = (char *) r1 + offset;
-	// 	char * data2 = (char *) r2 + offset;
-	// 	memcpy(buff1, data1, length);
-	// 	memcpy(buff2, data2, length);
-	// 	if (type == INTEGER) {
-	// 		if ((*(int *) data1) > (*(int *) data2)) {
-	// 			free(buff1);
-	// 			free(buff2);
-	// 			return 1;
-	// 		} else if ((*(int *) data1) < (*(int *) data2)) {
-	// 			free(buff1);
-	// 			free(buff2);
-	// 			return -1;
-	// 		}
-	// 	}
-	// 	if (type == FLOAT) {
-	// 		if ((*(float *) data1) > (*(float *) data2)) {
-	// 			free(buff1);
-	// 			free(buff2);
-	// 			return 1;
-	// 		} else if ((*(float *) data1) < (*(float *) data2)) {
-	// 			free(buff1);
-	// 			free(buff2);
-	// 			return -1;
-	// 		}
-	// 	}
-	// 	if (type == STRING) {
-	// 		int rc = strncmp(data1, data2, length);
-	// 		if (rc > 0) {
-	// 			free(buff1);
-	// 			free(buff2);
-	// 			return 1;
-	// 		} else if (rc < 0) {
-	// 			free(buff1);
-	// 			free(buff2);
-	// 			return -1;
-	// 		}
-	// 	}
-	// 	free(buff1);
-	// 	free(buff2);
-	// }
-	// return 0;
+//	  int i, j, offset, length, type;
+//	 void * buff1, *buff2;
+//	 for (i = 0; i < SCHEMA->n_sort_attrs; i++) {
+//	 	offset = 0;
+//	 	for (j = 0; j < SCHEMA->sort_attrs[i]; j++) {
+//	 		offset += SCHEMA->attrs[j]->length;
+//	 	} //TODO; fix sorting on second attribute
+//	 	type = SCHEMA->attrs[i]->type;
+//	 	if (type == STRING) {
+//	 		length = SCHEMA->attrs[i]->length;
+//	 	} else if (type == INTEGER) {
+//	 		length = sizeof(int);
+//	 	} else if (type == FLOAT) {
+//	 		length = sizeof(float);
+//	 	}
+//	 	buff1 = malloc(length);
+//	 	memset(buff1, 0, length);
+//	 	buff2 = malloc(length);
+//	 	memset(buff2, 0, length);
+//	 	char * data1 = (char *) r1 + offset;
+//	 	char * data2 = (char *) r2 + offset;
+//	 	memcpy(buff1, data1, length);
+//	 	memcpy(buff2, data2, length);
+//	 	if (type == INTEGER) {
+//	 		if ((*(int *) data1) > (*(int *) data2)) {
+//	 			free(buff1);
+//	 			free(buff2);
+//	 			return 1;
+//	 		} else if ((*(int *) data1) < (*(int *) data2)) {
+//	 			free(buff1);
+//	 			free(buff2);
+//	 			return -1;
+//	 		}
+//	 	}
+//	 	if (type == FLOAT) {
+//	 		if ((*(float *) data1) > (*(float *) data2)) {
+//	 			free(buff1);
+//	 			free(buff2);
+//	 			return 1;
+//	 		} else if ((*(float *) data1) < (*(float *) data2)) {
+//	 			free(buff1);
+//	 			free(buff2);
+//	 			return -1;
+//	 		}
+//	 	}
+//	 	if (type == STRING) {
+//	 		int rc = strncmp(data1, data2, length);
+//	 		if (rc > 0) {
+//	 			free(buff1);
+//	 			free(buff2);
+//	 			return 1;
+//	 		} else if (rc < 0) {
+//	 			free(buff1);
+//	 			free(buff2);
+//	 			return -1;
+//	 		}
+//	 	}
+//	 	free(buff1);
+//	 	free(buff2);
+//	 }
+//	 return 0;
 }
 
 
@@ -406,6 +405,7 @@ int ExternalSorter::csv2pagefile(std::string csv_file, std::string page_file, st
 
 		// serialize and put the record in the buffer
 		reader->serialize(line, record_pointer);
+		record_pointer += record_size;
 		record_count = 1;
 		total_record_count++;
 
@@ -583,24 +583,26 @@ int merge_runs(RunIterator* iterators[], int num_runs, std::fstream *out_fp,
 		}
 
 		// find where the smallest record, i.e. the one with rating = 0
-		for (i = 0; i < num_runs && rating[i] != 0; i++) {}
+		int smallest = num_runs - 1;
+		int index = 0;
+		for (i = 0; i < num_runs; i++) {
+			if (rating[i] < smallest && (rating[i] != -1)) {
+				smallest = rating[i];
+				index = i;
+			}
+		}
+
+		i = index;
 		
-		//TODO: what if there is no 0
-		std::cout << rating[0] << " " << rating[1] << " " << rating[2] << " "<< rating[3] << "\n";
-
-
 		// put it into buf
 		buf_ptr = buf + cur_rec_pos;
 		memcpy(buf_ptr, heap[i], record_size);
-		cur_rec_pos += buf_size;
+		cur_rec_pos += record_size;
 
 		// replace smallest one with next record of the runIterator where it comes from
 		if (iterators[i]->has_next()) {
-			total_length += record_size;
 			memcpy(heap[i], iterators[i]->next()->data, record_size);
-			//std::cout << "heap[i] " << heap[i] << "\n"; 
-			//std::cout << "heap[i] " << heap[i] << "\n"; 
-
+			total_length += record_size;
 		} else {
 			// if one iterator is empty, increase done by 1
 			rating[i] = -1;
@@ -616,29 +618,115 @@ int merge_runs(RunIterator* iterators[], int num_runs, std::fstream *out_fp,
 
 		}
 
-		// re-sort the ratings. First calculate reverse-rating
-		for (j = 0; j < num_runs; j++) {
-			reverse_rating[j] = -1;
-			if (rating[j] > -1)
-				reverse_rating[rating[j]] = j;
+		int summary[num_runs];
+		int result = 0;
+		for (i = 0; i < num_runs; i++) {
+			result = 0;
+			for (j = 0; j < num_runs; j++) {
+				if (i >= j) {
+					if ((rating[i] != -1) && (rating[j] != -1)) {
+						result += compareRecord(heap[i], heap[j]);
+					}
+				}
+				else {
+					if ((rating[i] != -1) && (rating[j] != -1)) {
+						result -= compareRecord(heap[j], heap[i]);
+					}
+				}
+			}
+			summary[i] = result;
 		}
 
-		// fix this re-sorting
-		rating[i] = 0;
-		for (j = 0; j < num_runs; j++) {
-			if (reverse_rating[j] == -1 || reverse_rating[j] == i) {
-				continue;
-			}
-			// compare heap[i] with the next smallest
-			compared = compareRecord(heap[i], heap[reverse_rating[j]]);
-			if (compared == -1 || compared == 0) { // i <= j
-				continue;
-			} else if (compared == 1) { // i > j
-				// swap rating
-				rating[i] = j;
-				rating[reverse_rating[j]] = rating[i];
+		int num_turns = num_runs;
+		for (i = 0; i < num_runs; i++) {
+			if (rating[i] == -1) {
+				summary[i] = num_runs;
+				num_turns--;
 			}
 		}
+
+		smallest = num_runs;
+		int turn = 0;
+		index = 0;
+		while (turn < num_turns) {
+			smallest = num_runs;
+			for (i = 0; i < num_runs; i++) {
+				if (summary[i] < smallest) {
+					smallest = summary[i];
+					index = i;
+				}
+			}
+			rating[index] = turn;
+			summary[index] = num_runs;
+			turn ++;
+		}
+
+//		for (i = 0; i < num_runs; i++) {
+//			rating[i] = i;
+//			for (j = i - 1; j >= 0; j--) {
+//				compared = compareRecord(heap[i], heap[j]);
+//				if (compared == 0) {
+//					rating[i] = rating[j];
+//					break;
+//				}
+//
+//				if (compared == -1) { // i > j
+//					smaller = rating[j];
+//					rating[j] = rating[i];
+//					rating[i] = smaller;
+//				}
+//			}
+//		}
+
+//		for (int k = 0; k < num_runs; k++) {
+//			rating[k] = k;
+//		}
+//
+//		int intermediate = 0;
+//		int min_i;
+//		for (int k = 0; k < num_runs - 1; k++) {
+//			min_i = k;
+//			for (int m = k + 1; m < num_runs; m ++) {
+//				compared = compareRecord(heap[min_i], heap[m]);
+//				if (compared == 1 && (rating[min_i] < rating[m])) {	//swaping
+//					min_i = m;
+//				}
+//
+//				if (k != min_i) {
+//					intermediate = rating[k];
+//					rating[k] = rating[min_i];
+//					rating[min_i] = intermediate;
+//				}
+//			}
+//		}
+
+//		// re-sort the ratings. First calculate reverse-rating
+//		for (j = 0; j < num_runs; j++) {
+//			reverse_rating[rating[j]] = -1;
+//			if (rating[j] > -1)
+//				reverse_rating[rating[j]] = j;
+//		}
+//
+//		// fix this re-sorting
+//		rating[i] = 0;
+//		for (j = 0; j < num_runs; j++) {
+//			if (reverse_rating[j] == -1 || reverse_rating[j] == i) {
+//				continue;
+//			}
+//			// compare heap[i] with the next smallest
+//			compared = compareRecord(heap[i], heap[reverse_rating[j]]);
+//			if (compared == -1 || compared == 0) { // i <= j
+//				continue;
+//			} else if (compared == 1) { // i > j
+//				// swap rating
+//				int intermediate = rating[i];
+//				rating[i] = j;
+//				rating[reverse_rating[j]] = intermediate;
+//			}
+//		}
+
+		std::cout << "mihai";
+
 	} // end while
 
 	// write the last page out to disk
@@ -646,42 +734,3 @@ int merge_runs(RunIterator* iterators[], int num_runs, std::fstream *out_fp,
 
 	return total_length;
 }
-
-/*
-int main() {
-	std::string in_fn = "data_example.csv";
-	std::string out_fn = "pagefile";
-	std::string pass1_fn = "pass1.pages";
-
-	// create page file
-	ExternalSorter sorter("schema_example.json");
-	// add sort attributes to schema
-	sorter.addSortingAttributes("cgpa");
-	int record_count = sorter.csv2pagefile(in_fn, out_fn);
-
-
-
-	int num_runs = 4;
-	int buf_size = 125 / (num_runs + 1);
-	sorter.setMemCapacity(125);
-	RunIterator** iterators = new RunIterator*[num_runs];
-
-	int record_size = 25;
-	int run_length = (record_count / num_runs) * record_size;
-	int last_run_length = (record_count % num_runs) * record_size;
-
-	std::ifstream page_fp(out_fn.c_str(), std::ifstream::binary);
-	int i = 0;
-	for (i = 0 ; i < num_runs - 1; i++) {
-		iterators[i] = new RunIterator(&page_fp, i * run_length, run_length, buf_size, sorter.getSchemaReader());
-	}
-	iterators[i] = new RunIterator(&page_fp, i * run_length, last_run_length, buf_size, sorter.getSchemaReader());
-
-	std::ofstream out_fp(pass1_fn.c_str(), std::ofstream::binary);
-	char * buf = (char*) malloc(buf_size);
-	memset(buf, 0, buf_size);
-	merge_runs(iterators, num_runs, &out_fp, 0, buf, buf_size);
-
-
-}
-*/

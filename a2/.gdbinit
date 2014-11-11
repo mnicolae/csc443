@@ -1,15 +1,3 @@
-# write in csv2pagefile
-break library.cc:398 
-break library.cc:420
-
-#break fillBuffer
-
-# initialize runiterators
-break msort.cc:80 
-command
-	print j
-	continue
-end
 
 # finish initialization of heap[] and rating[]
 break library.cc:571 
@@ -18,15 +6,40 @@ command
 	print rating[1]
 	print rating[2]
 	print rating[3]
+	print heap[0]
+	print heap[1]
+	print heap[2]
+	print heap[3]
 end	
 
-# inside RunIterator constructor, after fillBuffer is called
-#break library.cc:453
-
-# inside fillBuffer, after fp->read is called
-break library.cc:470
+break library.cc:605 
 command
-	print buffer
+	print heap[i]
 end
+
+break library.cc:640
+command
+	print summary[0]
+	print summary[1]
+	print summary[2]
+	print summary[3]
+	print heap[0]
+	print heap[1]
+	print heap[2]
+	print heap[3]
+end
+
+break library.cc:728
+command
+	print rating[0]
+	print rating[1]
+	print rating[2]
+	print rating[3]
+	print heap[0]
+	print heap[1]
+	print heap[2]
+	print heap[3]
+end
+
 
 run schema_example.json 500.csv outfile 3072 4 cgpa

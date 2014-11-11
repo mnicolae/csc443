@@ -43,33 +43,15 @@ int main(int argc, const char* argv[]) {
 	// make runs
 	int record_count = sorter.csv2pagefile(csv_fn, tmp_file_name[cur_idx], &run_lengths[cur_idx]);
 
-  	// Do the merge
-	// int record_size = reader.getRecordSize();
-	
-
-	// int run_len = mem_capacity;
-	// int residual = record_size * record_count;
-
-	
-	// int groups = ceil((record_count*record_size*1.0) / mem_capacity);
-	// for (int i = 0; i < groups; i++) {
-	// 	for (int j = 0; j < k; j++) {
-	// 		if (residual > run_len) {
-	// 			run_lengths[cur_idx].push_back(run_len);
-	// 			residual -= run_len;
-	// 		} else {
-	// 			run_lengths[cur_idx].push_back(residual);
-	// 		}
-	// 	}
-	// }
 
 	////////////////////////////////////////////////////////////
 	//
 	//    Main merge loop 
 	//
 	////////////////////////////////////////////////////////////
-
-	long buffer_size = mem_capacity / (k+1);
+	int record_size = reader.getRecordSize();
+	long tmp_size = mem_capacity / (k+1);
+	long buffer_size = (tmp_size / record_size) * record_size;
 	long start_pos;
 	long run_len;
 	RunIterator** iterators;
@@ -85,14 +67,14 @@ int main(int argc, const char* argv[]) {
 
 
 		// call merge_runs multiple times to merge all runs in this pass
-		int num_runs = 0;
+		int num_runs;
 		int total_num_runs = run_lengths[cur_idx].size();
 		for (int i=0; i < total_num_runs; i += k) { 
 
 		  	// initialize a group of _at most_ k iterators
 			iterators = new RunIterator*[k];
 			start_pos = 0;
-
+			num_runs = 0;
 			for (int j = 0; j < k; j++) {
 				if (i + j < total_num_runs ) {
 					iterators[j] = new RunIterator(&tmp_file[cur_idx], start_pos, run_lengths[cur_idx][i + j], buffer_size, &reader);
@@ -110,7 +92,7 @@ int main(int argc, const char* argv[]) {
 			run_lengths[1 - cur_idx].push_back(run_len);
 
 		  	// destroy this group of iterators
-			for (int j = 0; j < k; j++) {
+			for (int j = 0; j < num_runs; j++) {
 				delete iterators[j];
 			}
 
@@ -132,6 +114,7 @@ int main(int argc, const char* argv[]) {
 	//
 	////////////////////////////////////////////////////////////
 
+	std::cout << tmp_file_name[1 - cur_idx];
 
 	ftime(&end);
 	end_time = end.time * 1000 + end.millitm;  
