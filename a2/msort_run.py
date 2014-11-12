@@ -104,7 +104,7 @@ def do_tests(mem_caps, kways, file_sizes):
 			for size in file_sizes:
 				times.append(test_msort(size, mem, k, 'cgpa', 3))
 			tit =	'msort_k' + str(k) + '_m' + str(mem)
-			create_graph(tit, file_sizes, times, 'file size', 'milliseconds');
+			create_graph(tit, file_sizes, times, 'file size', 'milliseconds')
 
 if __name__ == '__main__':
 
@@ -126,9 +126,9 @@ if __name__ == '__main__':
 	else:
 		
 		# set default values
-		rec_num = 5000 if ('rec_num' not in args) else args['rec_num']
-		mem_cap = 3072 if ('mem_cap' not in args) else args['mem_cap']
-		k = 4 if ('k' not in args) else args['k']
+		rec_num = 5000 if ('rec_num' not in args) else int(args['rec_num'])
+		mem_cap = 3072 if ('mem_cap' not in args) else int(args['mem_cap'])
+		k = 4 if ('k' not in args) else int(args['k'])
 		sort_attrs = 'cgpa' if ('sort_attrs' not in args) else args['sort_attrs']
 
 		print "msort: records=%d, memory=%d, k=%d, sort_attrs='%s'" % (rec_num, mem_cap, k, sort_attrs)
