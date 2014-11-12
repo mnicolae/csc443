@@ -50,19 +50,20 @@ generate data and create a file
 def create_attr_file(data):
     attribute = data[0]
     nrecords = data[1]
+    outfile = data[2]
     if attribute["type"] == "string":
         tmp = generate_strings(nrecords, attribute["length"])
-        write2file(attribute["name"] + ".tmp", tmp)
+        write2file(outfile + '_' + attribute["name"] + ".tmp", tmp)
     elif attribute["type"] == "integer":
         if "distribution" in attribute:
             if attribute["distribution"]["name"] == "uniform":
                 tmp = generate_ints(nrecords, attribute["distribution"]["min"], attribute["distribution"]["max"])
-                write2file(attribute["name"] + ".tmp", tmp)
+                write2file(outfile + '_' + attribute["name"] + ".tmp", tmp)
     elif attribute["type"] == "float":
         if "distribution" in attribute:
             if attribute["distribution"]["name"] == "normal":
                 tmp = generate_floats(nrecords, attribute["distribution"]["mu"], attribute["distribution"]["sigma"])
-                write2file(attribute["name"] + ".tmp", tmp)
+                write2file(outfile + '_' + attribute["name"] + ".tmp", tmp)
 
 '''
 You should implement this script to generate test data for your
@@ -94,13 +95,13 @@ def generate_data(schema, out_file, nrecords):
   
   # create a worker process for each attribute
   pool = Pool()
-  args = zip(schema, [nrecords for i in range(len(schema))])
+  args = zip(schema, [nrecords for i in range(len(schema))], [out_file for i in range(len(schema))])
   pool.map(create_attr_file, args)
   pool.close()
   pool.join()
 
   # open the temporary column files
-  files = map(open, map(lambda attr: attr["name"] + '.tmp', schema))
+  files = map(open, map(lambda attr: out_file + '_' + attr["name"] + '.tmp', schema))
   
   # re-assemble row from columns
   outfile = open(out_file, "w")
@@ -112,7 +113,24 @@ def generate_data(schema, out_file, nrecords):
   # close files
   for f in files:
     f.close()
-    os.remove(f.name);
+    os.remove(f.name)
+
+def chunks(l, n):
+    """ Yield successive n-sized chunks from l.
+    """
+    for i in xrange(0, len(l), n):
+        yield l[i:i+n]
+
+def format_output(outfile):
+  f = open(outfile, 'r')
+  l = f.readline()
+  f.close();
+  r = list(chunks(l,25))
+
+  f = open(outfile + '.sorted','w')
+  for x in r:
+    f.write(x + '\n')
+  f.close()
 
 
 if __name__ == '__main__':

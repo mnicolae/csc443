@@ -108,13 +108,12 @@ int main(int argc, const char* argv[]) {
 		tmp_file[cur_idx].close();
 		tmp_file[1 - cur_idx].close();
 
-	 	// switch the index
-		std::cout<< "\t" << tmp_file_name[1-cur_idx] << "\n";
 
 		// DEBUG
 		for(std::vector<long>::const_iterator i=run_lengths[1-cur_idx].begin(); i !=run_lengths[1- cur_idx].end(); i++)
 			std::cout << *i << ", " ; 
-
+		
+	 	// switch the index
 		cur_idx = 1 - cur_idx;
 	}
 
