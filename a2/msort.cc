@@ -43,7 +43,9 @@ int main(int argc, const char* argv[]) {
 	// make runs
 	int record_count = sorter.csv2pagefile(csv_fn, tmp_file_name[cur_idx], &run_lengths[cur_idx]);
 
-
+	// DEBUG
+	for(std::vector<long>::const_iterator i=run_lengths[cur_idx].begin(); i !=run_lengths[cur_idx].end(); i++)
+		std::cout << *i << ", " ; 
 	////////////////////////////////////////////////////////////
 	//
 	//    Main merge loop 
@@ -62,7 +64,7 @@ int main(int argc, const char* argv[]) {
 		tmp_file[cur_idx].open(tmp_file_name[cur_idx].c_str(), std::fstream::in | std::fstream::binary);
 		tmp_file[1 - cur_idx].open(tmp_file_name[1 - cur_idx].c_str(), std::fstream::out | std::fstream::binary);		
 
-		
+		// initialize vector that stores run lengths for next pass	
 		run_lengths[1 - cur_idx].clear();
 
 
@@ -105,6 +107,11 @@ int main(int argc, const char* argv[]) {
 		tmp_file[1 - cur_idx].close();
 
 	 	// switch the index
+		std::cout<< tmp_file_name[1-cur_idx] << "\n";
+	// DEBUG
+	for(std::vector<long>::const_iterator i=run_lengths[1-cur_idx].begin(); i !=run_lengths[1- cur_idx].end(); i++)
+		std::cout << *i << ", " ; 
+
 		cur_idx = 1 - cur_idx;
 	}
 
@@ -114,7 +121,7 @@ int main(int argc, const char* argv[]) {
 	//
 	////////////////////////////////////////////////////////////
 
-	rename( tmp_file_name[1 - cur_idx].c_str() ,  out_fn);
+	rename( tmp_file_name[cur_idx].c_str() ,  out_fn);
 
 	ftime(&end);
 	end_time = end.time * 1000 + end.millitm;  

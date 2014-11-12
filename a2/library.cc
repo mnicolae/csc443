@@ -465,9 +465,9 @@ int RunIterator::fillBuffer() {
 	fp->read(buffer, buf_size);
 
 	// restore saved seekg position
-	fp->seekg(pos);
+	fp->seekg(pos, fp->beg);
 
-	// increment to next record
+	// increment pointer to next buffer page
 	cur_pos += buf_size;
 
 	return 1;
@@ -512,7 +512,7 @@ bool RunIterator::has_next() {
 	// check if the next record is empty (only happens in last page of run) ...
 	char* rec_ptr = (char*) buffer + cur_rec_pos;
 	// ... by checking if the first byte is zero
-	if ((*rec_ptr == 0) && (cur_pos == start_pos + run_length))
+	if ((*rec_ptr == 0) || (cur_pos == start_pos + run_length))
 		return false;
 	return true; // note: run_length has to be in bytes, not pages.
 }
@@ -549,10 +549,10 @@ int merge_runs(RunIterator* iterators[], int num_runs, std::fstream *out_fp,
 
 	for (i = 0; i < num_runs; i++) {
 		heap.push_back(iterators[i]->next()->data);
+		total_length += record_size;
 		rating[i] = i;
 		for (j = i - 1; j >= 0; j--) {
 			compared = compareRecord(heap[i], heap[j]);
-			total_length += record_size;
 			if (compared == 0) {
 				rating[j] = rating[i];
 				break;
@@ -568,7 +568,6 @@ int merge_runs(RunIterator* iterators[], int num_runs, std::fstream *out_fp,
 
 	int done = 0;
 	int cur_rec_pos = 0; // current record position in buffer
-	// int buf_capacity = buf_size / record_size;
 	char *buf_ptr = buf;
 
 	memset(buf, 0, buf_size);
@@ -623,12 +622,12 @@ int merge_runs(RunIterator* iterators[], int num_runs, std::fstream *out_fp,
 		for (i = 0; i < num_runs; i++) {
 			result = 0;
 			for (j = 0; j < num_runs; j++) {
-				if (i >= j) {
+				if (i > j) {
 					if ((rating[i] != -1) && (rating[j] != -1)) {
 						result += compareRecord(heap[i], heap[j]);
 					}
 				}
-				else {
+				else if (i < j) {
 					if ((rating[i] != -1) && (rating[j] != -1)) {
 						result -= compareRecord(heap[j], heap[i]);
 					}
@@ -660,73 +659,7 @@ int merge_runs(RunIterator* iterators[], int num_runs, std::fstream *out_fp,
 			summary[index] = num_runs;
 			turn ++;
 		}
-
-//		for (i = 0; i < num_runs; i++) {
-//			rating[i] = i;
-//			for (j = i - 1; j >= 0; j--) {
-//				compared = compareRecord(heap[i], heap[j]);
-//				if (compared == 0) {
-//					rating[i] = rating[j];
-//					break;
-//				}
-//
-//				if (compared == -1) { // i > j
-//					smaller = rating[j];
-//					rating[j] = rating[i];
-//					rating[i] = smaller;
-//				}
-//			}
-//		}
-
-//		for (int k = 0; k < num_runs; k++) {
-//			rating[k] = k;
-//		}
-//
-//		int intermediate = 0;
-//		int min_i;
-//		for (int k = 0; k < num_runs - 1; k++) {
-//			min_i = k;
-//			for (int m = k + 1; m < num_runs; m ++) {
-//				compared = compareRecord(heap[min_i], heap[m]);
-//				if (compared == 1 && (rating[min_i] < rating[m])) {	//swaping
-//					min_i = m;
-//				}
-//
-//				if (k != min_i) {
-//					intermediate = rating[k];
-//					rating[k] = rating[min_i];
-//					rating[min_i] = intermediate;
-//				}
-//			}
-//		}
-
-//		// re-sort the ratings. First calculate reverse-rating
-//		for (j = 0; j < num_runs; j++) {
-//			reverse_rating[rating[j]] = -1;
-//			if (rating[j] > -1)
-//				reverse_rating[rating[j]] = j;
-//		}
-//
-//		// fix this re-sorting
-//		rating[i] = 0;
-//		for (j = 0; j < num_runs; j++) {
-//			if (reverse_rating[j] == -1 || reverse_rating[j] == i) {
-//				continue;
-//			}
-//			// compare heap[i] with the next smallest
-//			compared = compareRecord(heap[i], heap[reverse_rating[j]]);
-//			if (compared == -1 || compared == 0) { // i <= j
-//				continue;
-//			} else if (compared == 1) { // i > j
-//				// swap rating
-//				int intermediate = rating[i];
-//				rating[i] = j;
-//				rating[reverse_rating[j]] = intermediate;
-//			}
-//		}
-
-		std::cout << "mihai";
-
+		smallest = 0;
 	} // end while
 
 	// write the last page out to disk
