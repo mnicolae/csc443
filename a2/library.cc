@@ -510,11 +510,12 @@ bool RunIterator::has_next() {
 			return false;
 		}
 		cur_rec_pos = 0;
+		return true;
 	}
 	// check if the next record is empty (only happens in last page of run) ...
 	char* rec_ptr = (char*) buffer + cur_rec_pos;
 	// ... by checking if the first byte is zero
-	if ((*rec_ptr == 0) || (cur_pos >= start_pos + run_length))
+	if ((*rec_ptr == 0)) // || (cur_pos > start_pos + run_length)) // removed = from second condition
 		return false;
 	return true; // note: run_length has to be in bytes, not pages.
 }

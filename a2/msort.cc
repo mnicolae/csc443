@@ -44,10 +44,6 @@ int main(int argc, const char* argv[]) {
 	// make runs
 	sorter.csv2pagefile(csv_fn, tmp_file_name[cur_idx], &run_lengths[cur_idx]);
 
-	// DEBUG
-	for(std::vector<long>::const_iterator i=run_lengths[cur_idx].begin(); i !=run_lengths[cur_idx].end(); i++)
-		std::cout << *i << ", " ; 
-
 	////////////////////////////////////////////////////////////
 	//
 	//    Main merge loop 
@@ -72,12 +68,13 @@ int main(int argc, const char* argv[]) {
 
 		// call merge_runs multiple times to merge all runs in this pass
 		int num_runs;
+		start_pos = 0;
+
 		int total_num_runs = run_lengths[cur_idx].size();
 		for (int i=0; i < total_num_runs; i += k) { 
 
 		  	// initialize a group of _at most_ k iterators
 			iterators = new RunIterator*[k];
-			start_pos = 0;
 			num_runs = 0;
 			for (int j = 0; j < k; j++) {
 				if (i + j < total_num_runs ) {
@@ -108,11 +105,6 @@ int main(int argc, const char* argv[]) {
 		tmp_file[cur_idx].close();
 		tmp_file[1 - cur_idx].close();
 
-
-		// DEBUG
-		for(std::vector<long>::const_iterator i=run_lengths[1-cur_idx].begin(); i !=run_lengths[1- cur_idx].end(); i++)
-			std::cout << *i << ", " ; 
-		
 	 	// switch the index
 		cur_idx = 1 - cur_idx;
 	}
