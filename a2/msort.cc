@@ -23,10 +23,11 @@ int main(int argc, const char* argv[]) {
 
 	// initialize temporary files
 	int cur_idx = 0;
-	std::string tmp_file_name[] = {"0.tmp", "1.tmp"};
+	std::string tmp_file_name[] = {std::string(out_fn), std::string(out_fn)};	
+	tmp_file_name[0] += ".0";
+	tmp_file_name[1] += ".1";
  	std::fstream *tmp_file = new std::fstream[2];
 
-  	
 
 	ftime(&start);
 	start_time = start.time * 1000 + start.millitm;
@@ -108,7 +109,7 @@ int main(int argc, const char* argv[]) {
 		tmp_file[1 - cur_idx].close();
 
 	 	// switch the index
-		std::cout<< tmp_file_name[1-cur_idx] << "\n";
+		std::cout<< "\t" << tmp_file_name[1-cur_idx] << "\n";
 
 		// DEBUG
 		for(std::vector<long>::const_iterator i=run_lengths[1-cur_idx].begin(); i !=run_lengths[1- cur_idx].end(); i++)
@@ -123,7 +124,7 @@ int main(int argc, const char* argv[]) {
 	//
 	////////////////////////////////////////////////////////////
 
-	rename( tmp_file_name[cur_idx].c_str() ,  out_fn);
+	rename(tmp_file_name[cur_idx].c_str() , out_fn);
 
 	ftime(&end);
 	end_time = end.time * 1000 + end.millitm;  
