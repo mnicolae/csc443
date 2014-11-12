@@ -4,7 +4,8 @@ import matplotlib
 from pylab import *
 
 schema_file = 'schema_example2.json'
-
+MB = 1024 * 1024
+GB = 1024 * MB
 
 def check_prereqs(prereqs):
 	def check(req):
@@ -96,22 +97,7 @@ def create_graph(tit, x, y, xlab, ylab):
 	ylabel(ylab)
 	savefig(tit + '.png')
 
-
-if __name__ == '__main__':
-
-	# check if all needed files exist
-	prereqs = [schema_file, 'data_generator.py', 'msort']
-	check_prereqs(prereqs)
-
-	# run tests
-	MB = 1024 * 1024
-	GB = 1024 * MB
-	# file_sizes = [1*MB, 10*MB, 500*MB, 1*GB]
-	mem_caps = [3072]
-	kways = [4]
-	file_sizes = [10*MB, 20*MB, 50*GB]
-	times = []
-
+def do_tests(mem_caps, kways, file_sizes):
 	for mem in mem_caps:
 		for k in kways:
 			times = []
@@ -120,8 +106,31 @@ if __name__ == '__main__':
 			tit =	'msort_k' + str(k) + '_m' + str(mem)
 			create_graph(tit, file_sizes, times, 'file size', 'milliseconds');
 
-	# run_msort(60000, 3072, 4, 'cgpa')
-	# run_msort(5000, 3072, 4, 'cgpa')
-	# run_msort(10000, 3072, 4, 'cgpa')
-	# run_msort(50000, 3072, 4, 'cgpa')
-	
+if __name__ == '__main__':
+
+	# check if all needed files exist
+	prereqs = [schema_file, 'data_generator.py', 'msort']
+	check_prereqs(prereqs)
+
+	# get input
+	arg_names = ['command', 'rec_num', 'mem_cap', 'k', 'sort_attrs']
+	args = dict(zip(arg_names, sys.argv))
+
+
+	if ('rec_num' in args) and (args['rec_num'] == 'test'):
+		# run tests
+		mem_caps = [3072]
+		kways = [4]
+		file_sizes = [10*MB, 20*MB, 50*GB]
+		do_tests(mem_caps, kways, file_sizes)
+	else:
+		
+		# set default values
+		rec_num = 5000 if ('rec_num' not in args) else args['rec_num']
+		mem_cap = 3072 if ('mem_cap' not in args) else args['mem_cap']
+		k = 4 if ('k' not in args) else args['k']
+		sort_attrs = 'cgpa' if ('sort_attrs' not in args) else args['sort_attrs']
+
+		print "msort: records=%d, memory=%d, k=%d, sort_attrs='%s'" % (rec_num, mem_cap, k, sort_attrs)
+		stdout = run_msort(rec_num, mem_cap, k, sort_attrs)
+		print stdout
