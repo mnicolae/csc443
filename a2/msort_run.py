@@ -118,10 +118,19 @@ if __name__ == '__main__':
 
 
 	if ('rec_num' in args) and (args['rec_num'] == 'test'):
-		# run tests
+		
+		##########################################
+		##
+		## Change these values before running tests
+		##
+		##########################################
+
 		mem_caps = [3072]
 		kways = [4]
 		file_sizes = [10*MB, 20*MB, 50*GB]
+
+		##########################################
+		# run tests
 		do_tests(mem_caps, kways, file_sizes)
 	else:
 		
