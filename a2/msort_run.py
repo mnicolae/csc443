@@ -1,5 +1,7 @@
 import sys, os, re
 from subprocess import Popen, PIPE
+import matplotlib
+from pylab import *
 
 schema_file = 'schema_example2.json'
 
@@ -7,10 +9,8 @@ schema_file = 'schema_example2.json'
 def check_prereqs(prereqs):
 	def check(req):
 		if (os.path.exists(req) == False):
-			print req, 'is missing!'
+			print req, 'is missing! Exit now ... '
 			sys.exit()
-		# else:
-		# 	print req, 'ok!'
 		return True
 	map(check, prereqs)
 
@@ -20,7 +20,7 @@ def setup(rec_num, data_file):
 	'''
 	if (os.path.exists(data_file) == False): 
 		print "Creating %d.csv ..." % rec_num
-		Popen(['python', os.curdir +'/'+ 'data_generator.py', schema_file, data_file, str(rec_num)]).wait()
+		Popen(['python', os.curdir +'/'+ 'data_generator.py', schema_file, data_file, str(rec_num)], stdout=PIPE).wait()
 
 def teardown(data_file):
 	# remove temp files
@@ -81,11 +81,21 @@ def test_msort(rec_num, mem_cap, k, sort_attrs, reps):
 	'''
 	Execute run_msort reps times and return the average run time
 	'''
+	print "Test: %d-way sorting %d records on attrs '%s' with memory capacity %d ... " % (k, rec_num, sort_attrs, mem_cap)
 	perf = []
 	for x in range(reps):
 		r = run_msort(rec_num, mem_cap, k, sort_attrs)
 		perf.append(r[-1])
 	return reduce(lambda x,y: x+y, perf)/len(perf)
+
+def create_graph(tit, x, y, xlab, ylab):
+	figure(1)
+	title(tit)
+	loglog(x,y)
+	xlabel(xlab)
+	ylabel(ylab)
+	savefig(tit + '.png')
+
 
 if __name__ == '__main__':
 
@@ -96,18 +106,19 @@ if __name__ == '__main__':
 	# run tests
 	MB = 1024 * 1024
 	GB = 1024 * MB
-	file_sizes = [1*MB, 10*MB, 500*MB, 1*GB]
+	# file_sizes = [1*MB, 10*MB, 500*MB, 1*GB]
+	mem_caps = [3072]
+	kways = [4]
+	file_sizes = [10*MB, 20*MB, 50*GB]
 	times = []
-	for size in file_sizes:
-		times.append(test_msort(size, 3072, 4, 'cgpa', 3))
-	
-	figure(1)
-	title('msort performance')
-	loglog(file_sizes, times)
-	xlabel('file size')
-	ylabel('milliseconds')
-	savefig('graph_msort.png')
 
+	for mem in mem_caps:
+		for k in kways:
+			times = []
+			for size in file_sizes:
+				times.append(test_msort(size, mem, k, 'cgpa', 3))
+			tit =	'msort_k' + str(k) + '_m' + str(mem)
+			create_graph(tit, file_sizes, times, 'file size', 'milliseconds');
 
 	# run_msort(60000, 3072, 4, 'cgpa')
 	# run_msort(5000, 3072, 4, 'cgpa')
