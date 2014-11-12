@@ -4,12 +4,12 @@ def chunks(l, n):
     for i in xrange(0, len(l), n):
         yield l[i:i+n]
 
-f = open("1.tmp")
+f = open(sys.argv[1], 'r')
 l = f.readline()
 f.close();
 r = list(chunks(l,25))
 
-f = open("sorted.tmp")
+f = open(sys.argv[1] + '.sorted','w')
 for x in r:
 	f.write(x + '\n')
 f.close()
