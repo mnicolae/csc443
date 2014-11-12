@@ -1,8 +1,8 @@
-import sys, os
+import sys, os, re
 from subprocess import Popen, PIPE
 
 schema_file = 'schema_example2.json'
-prereqs = [schema_file, 'data_generator.py', 'msort']
+
 
 def check_prereqs(prereqs):
 	def check(req):
@@ -19,12 +19,8 @@ def setup(rec_num, data_file):
 	Create data for test
 	'''
 	if (os.path.exists(data_file) == False): 
-		print "%d.csv is missing" % rec_num
-		sys.exit()
-		# Popen(['/usr/local/bin/python data_generator.py', schema_file, data_file, '%d' % rec_num]).wait()
-		# cmd = 'python data_generator.py ' + schema_file + ' ' + data_file + ' ' + str(rec_num)
-		# sys.wait()
-		# Popen([cmd]).wait()
+		print "Creating %d.csv ..." % rec_num
+		Popen(['python', os.curdir +'/'+ 'data_generator.py', schema_file, data_file, str(rec_num)]).wait()
 
 def teardown(data_file):
 	# remove temp files
@@ -70,7 +66,8 @@ def run_msort(rec_num, mem_cap, k, sort_attrs):
 
 	# run msort
 	msort_cmd = './msort ' + schema_file + ' ' + data_file + ' ' + out_file + ' ' + str(mem_cap) + ' ' + str(k) + ' ' + sort_attrs
-	time=os.system(msort_cmd)
+	s = Popen(['./msort', schema_file, data_file, out_file, str(mem_cap), str(k), sort_attrs], stdout=PIPE).stdout.read()
+	r = map(int, re.findall(r'\d+', s))
 
 	# format output
 	format_output(out_file)
@@ -78,10 +75,42 @@ def run_msort(rec_num, mem_cap, k, sort_attrs):
 	# run teardown
 	teardown(out_file)
 
+	return r
+
+def test_msort(rec_num, mem_cap, k, sort_attrs, reps):
+	'''
+	Execute run_msort reps times and return the average run time
+	'''
+	perf = []
+	for x in range(reps):
+		r = run_msort(rec_num, mem_cap, k, sort_attrs)
+		perf.append(r[-1])
+	return reduce(lambda x,y: x+y, perf)/len(perf)
+
 if __name__ == '__main__':
+
+	# check if all needed files exist
+	prereqs = [schema_file, 'data_generator.py', 'msort']
 	check_prereqs(prereqs)
-	run_msort(500, 3072, 4, 'cgpa')
-	run_msort(5000, 3072, 4, 'cgpa')
-	run_msort(10000, 3072, 4, 'cgpa')
-	run_msort(50000, 3072, 4, 'cgpa')
+
+	# run tests
+	MB = 1024 * 1024
+	GB = 1024 * MB
+	file_sizes = [1*MB, 10*MB, 500*MB, 1*GB]
+	times = []
+	for size in file_sizes:
+		times.append(test_msort(size, 3072, 4, 'cgpa', 3))
+	
+	figure(1)
+	title('msort performance')
+	loglog(file_sizes, times)
+	xlabel('file size')
+	ylabel('milliseconds')
+	savefig('graph_msort.png')
+
+
+	# run_msort(60000, 3072, 4, 'cgpa')
+	# run_msort(5000, 3072, 4, 'cgpa')
+	# run_msort(10000, 3072, 4, 'cgpa')
+	# run_msort(50000, 3072, 4, 'cgpa')
 	
