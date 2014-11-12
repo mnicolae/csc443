@@ -114,7 +114,7 @@ int main(int argc, const char* argv[]) {
 	//
 	////////////////////////////////////////////////////////////
 
-	std::cout << tmp_file_name[1 - cur_idx];
+	rename( tmp_file_name[1 - cur_idx].c_str() ,  out_fn);
 
 	ftime(&end);
 	end_time = end.time * 1000 + end.millitm;  

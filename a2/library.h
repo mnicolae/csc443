@@ -1,11 +1,12 @@
 #include <cstdio>
-#include <stdlib.h>     /* qsort */
-#include <cstdio>
 #include <cstdlib>
+#include <cstring>
+#include <stdio.h>
+#include <stdlib.h>     /* qsort */
 #include <iostream> 
 #include <fstream>
 #include <sstream>
-#include <cstring>
+
 #include <time.h>
 #include <math.h>
 #include <sys/timeb.h>
