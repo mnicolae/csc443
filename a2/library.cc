@@ -436,7 +436,8 @@ int ExternalSorter::csv2pagefile(std::string csv_file, std::string page_file, st
 ////////////////////////////////////////////////////////////
 
 
-RunIterator::RunIterator(std::fstream * pagefile, long sp, long rl, long bs, SchemaReader *sr){
+RunIterator::RunIterator(int id, std::fstream * pagefile, long sp, long rl, long bs, SchemaReader *sr){
+	id = id;
 	fp = pagefile;
 	start_pos = sp;
 	run_length = rl;
@@ -543,7 +544,6 @@ int merge_runs(RunIterator* iterators[], int num_runs, std::fstream *out_fp,
 	int i, j;
 	std::vector<char*> heap;
 	int rating[num_runs];
-	int reverse_rating[num_runs];
 	int compared, smaller;
         int total_length = 0;
 	int record_size = iterators[0]->getReader()->getRecordSize();

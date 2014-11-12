@@ -97,6 +97,7 @@ public:
  */
 class RunIterator {
 private:
+	int id; // for debug
 	std::fstream * fp;
 	long cur_pos; // current position in page file
 	long start_pos;
@@ -117,7 +118,7 @@ public:
 	 * with length `run_length`.
 	 */
 
-	RunIterator(std::fstream * pagefile, long start_pos, long run_length,
+	RunIterator(int id, std::fstream * pagefile, long start_pos, long run_length,
 			long buf_size, SchemaReader *sr);
 
 	/**

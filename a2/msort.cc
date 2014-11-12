@@ -41,11 +41,12 @@ int main(int argc, const char* argv[]) {
 	std::vector<long> run_lengths[2];
 
 	// make runs
-	int record_count = sorter.csv2pagefile(csv_fn, tmp_file_name[cur_idx], &run_lengths[cur_idx]);
+	sorter.csv2pagefile(csv_fn, tmp_file_name[cur_idx], &run_lengths[cur_idx]);
 
 	// DEBUG
 	for(std::vector<long>::const_iterator i=run_lengths[cur_idx].begin(); i !=run_lengths[cur_idx].end(); i++)
 		std::cout << *i << ", " ; 
+
 	////////////////////////////////////////////////////////////
 	//
 	//    Main merge loop 
@@ -79,7 +80,7 @@ int main(int argc, const char* argv[]) {
 			num_runs = 0;
 			for (int j = 0; j < k; j++) {
 				if (i + j < total_num_runs ) {
-					iterators[j] = new RunIterator(&tmp_file[cur_idx], start_pos, run_lengths[cur_idx][i + j], buffer_size, &reader);
+					iterators[j] = new RunIterator(j, &tmp_file[cur_idx], start_pos, run_lengths[cur_idx][i + j], buffer_size, &reader);
 					start_pos += run_lengths[cur_idx][i + j];
 					num_runs ++;
 				}
@@ -108,9 +109,10 @@ int main(int argc, const char* argv[]) {
 
 	 	// switch the index
 		std::cout<< tmp_file_name[1-cur_idx] << "\n";
-	// DEBUG
-	for(std::vector<long>::const_iterator i=run_lengths[1-cur_idx].begin(); i !=run_lengths[1- cur_idx].end(); i++)
-		std::cout << *i << ", " ; 
+
+		// DEBUG
+		for(std::vector<long>::const_iterator i=run_lengths[1-cur_idx].begin(); i !=run_lengths[1- cur_idx].end(); i++)
+			std::cout << *i << ", " ; 
 
 		cur_idx = 1 - cur_idx;
 	}
