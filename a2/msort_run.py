@@ -87,7 +87,9 @@ def test_msort(rec_num, mem_cap, k, sort_attrs, reps):
 	for x in range(reps):
 		r = run_msort(rec_num, mem_cap, k, sort_attrs)
 		perf.append(r[-1])
-	return reduce(lambda x,y: x+y, perf)/len(perf)
+	time = reduce(lambda x,y: x+y, perf)/len(perf)
+	print rec_num, time
+	return time
 
 def create_graph(tit, x, y, xlab, ylab):
 	figure(1)
@@ -97,7 +99,7 @@ def create_graph(tit, x, y, xlab, ylab):
 	ylabel(ylab)
 	savefig(tit + '.png')
 
-def do_tests(mem_caps, kways, file_sizes):
+def do_size_tests(mem_caps, kways, file_sizes):
 	for mem in mem_caps:
 		for k in kways:
 			times = []
@@ -105,6 +107,27 @@ def do_tests(mem_caps, kways, file_sizes):
 				times.append(test_msort(size, mem, k, 'cgpa', 3))
 			tit =	'msort_k' + str(k) + '_m' + str(mem)
 			create_graph(tit, file_sizes, times, 'file size', 'milliseconds')
+
+def do_k_tests(mem_caps, kways, file_sizes):
+	mem = mem_caps[-1]
+	size = file_sizes[-1]
+	times = []
+	for k in kways:
+		times.append(test_msort(size, mem, k, 'cgpa', 2))
+	tit =	'msort_f' + str(size) + '_m' + str(mem)
+	create_graph(tit, size, times, 'k', 'milliseconds')
+    
+def do_parallel_tests(mem_caps, kways, file_sizes):
+	args =[]
+	for mem in mem_caps:
+		for k in kways:
+			for size in file_sizes:
+				args.append((size, mem, k, 1))
+				print args[-1]
+	# pool = Pool()
+	# pool.map(test_msort, args)
+	# pool.close()
+	# pool.join()
 
 if __name__ == '__main__':
 
@@ -125,13 +148,16 @@ if __name__ == '__main__':
 		##
 		##########################################
 
-		mem_caps = [3072]
-		kways = [4]
-		file_sizes = [10*MB, 20*MB, 50*GB]
+		mem_caps = [10000]
+		kways = [2, 4, 6, 8, 10]
+		file_sizes = [20*MB]
 
 		##########################################
 		# run tests
-		do_tests(mem_caps, kways, file_sizes)
+        #do_size_tests(mem_caps, kways, file_sizes)
+		do_k_tests(mem_caps, kways, file_sizes)
+		# do_parallel_tests(mem_caps, kways, file_sizes)
+		
 	else:
 		
 		# set default values
