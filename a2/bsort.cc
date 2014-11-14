@@ -50,7 +50,7 @@ int main(int argc, const char* argv[]) {
   leveldb::Options options;
   options.create_if_missing = true;
   //options.comparator = &cmp;
-  leveldb::Status status = leveldb::DB::Open(options, "/media/DAMONM/leveldb_dir", &db); // hard-coded path
+  leveldb::Status status = leveldb::DB::Open(options, "./leveldb_dir", &db); // hard-coded path
 
   SchemaReader reader(schema_file);
   reader.addSortingAttributes(sort_attrs);
