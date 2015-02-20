@@ -4,7 +4,7 @@ Implemented two algorithms to sort data on disk: multiway merge sort and B+ tree
 
 ## Authors:
 [Mihai Nicolae](http://github.com/mnicolae)  
-[Damon (Qingsong) Meng](http://github.com/QMeng)
+[Damon (Qingsong) Meng](http://github.com/QMeng)  
 [Huy Bui](https://github.com/mailtohuy)
 
 ## Instructor
